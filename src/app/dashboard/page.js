@@ -269,7 +269,7 @@ export default function Dashboard() {
   const handleRemoveBlacklist = async (item) => {
     if (!userProfile || !isHicom(userProfile.code)) return;
     const confirmDelete = confirm(
-      `Are you sure you want to remove "${item.roblox_username}" from the National Security Blacklist?`
+      `Are you sure you want to remove "${item.roblox_username}" from Blacklist?`
     );
 
     if (!confirmDelete) return;
@@ -464,7 +464,7 @@ export default function Dashboard() {
               }`}
             >
               <span className="text-red-500 text-xs">■</span>
-              <span className="tracking-wider">SECURITY BLACKLIST</span>
+              <span className="tracking-wider">BLACKLISTS</span>
             </button>
 
             <button
@@ -685,7 +685,7 @@ export default function Dashboard() {
                 <div className="border-b border-neutral-800 pb-4">
                   <h2 className="text-base font-mono font-bold text-neutral-100 tracking-widest uppercase flex items-center space-x-2">
                     <span className="text-red-500">❖</span>
-                    <span>NATIONAL SECURITY BLACKLIST</span>
+                    <span>BLACKLISTS</span>
                   </h2>
                   <p className="text-xs font-mono text-neutral-400 mt-1">
                     {userIsHicom ? 'Manage Agency Threat List & Watchlist' : 'Watchlist Registry (View Only)'}
@@ -792,7 +792,7 @@ export default function Dashboard() {
                 <div className="border-b border-neutral-800 pb-4">
                   <h2 className="text-base font-mono font-bold text-neutral-100 tracking-widest uppercase flex items-center space-x-2">
                     <span className="text-cyan-400">❖</span>
-                    <span>OFFICIAL DHS DOCUMENTS & TRYOUTS</span>
+                    <span>OFFICIAL DHS DOCUMENTS</span>
                   </h2>
                   <p className="text-xs font-mono text-neutral-400 mt-1">
                     {userIsHicom ? 'Link External Secure Documents & Set Target Ranks' : 'Authorized Document Registry'}
