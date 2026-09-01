@@ -540,7 +540,7 @@ export default function Dashboard() {
               }`}
             >
               <span className="text-cyan-400 text-xs">■</span>
-              <span className="tracking-wider">INCIDENT REPORTS ({incidentReports.length})</span>
+              <span className="tracking-wider">ARREST LOGS ({incidentReports.length})</span>
             </button>
 
             <button
@@ -893,7 +893,7 @@ export default function Dashboard() {
                   <div>
                     <h2 className="text-base font-mono font-bold text-neutral-100 tracking-widest uppercase flex items-center space-x-2">
                       <span className="text-cyan-400">❖</span>
-                      <span>INCIDENT REPORTS & ARREST LOG</span>
+                      <span>ARREST LOG</span>
                     </h2>
                     <p className="text-xs font-mono text-neutral-400 mt-1">
                       Log criminal bookings, suspect apprehensions, and official operational field reports
