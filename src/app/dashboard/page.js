@@ -28,7 +28,6 @@ const RANKS = [
   { code: 'E2', name: 'Cadet', level: 2, category: 'LOW COMMAND' },
 ];
 
-// Helper to check if user is HICOM (O7, O8, O9, O10)
 const isHicom = (rankCode) => {
   return ['O7', 'O8', 'O9', 'O10'].includes(rankCode);
 };
@@ -37,6 +36,7 @@ export default function Dashboard() {
   const [userProfile, setUserProfile] = useState(null);
   const [allUsers, setAllUsers] = useState([]);
   const [blacklists, setBlacklists] = useState([]);
+  const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('personnel');
 
@@ -51,7 +51,13 @@ export default function Dashboard() {
   const [blacklistDuration, setBlacklistDuration] = useState('Permanent');
   const [submittingBlacklist, setSubmittingBlacklist] = useState(false);
 
-  // States for viewing/managing individual selected user credentials
+  // Document creation states
+  const [docTitle, setDocTitle] = useState('');
+  const [docContent, setDocContent] = useState('');
+  const [docSelectedRanks, setDocSelectedRanks] = useState(['O6', 'O7', 'O8', 'O9', 'O10']);
+  const [submittingDoc, setSubmittingDoc] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+
   const [selectedUser, setSelectedUser] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -75,6 +81,7 @@ export default function Dashboard() {
     async function fetchData() {
       await loadPersonnel();
       await loadBlacklists();
+      await loadDocuments();
       setLoading(false);
     }
 
@@ -103,6 +110,15 @@ export default function Dashboard() {
       .order('created_at', { ascending: false });
 
     if (blacklistData) setBlacklists(blacklistData);
+  };
+
+  const loadDocuments = async () => {
+    const { data: docData } = await supabase
+      .from('documents')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (docData) setDocuments(docData);
   };
 
   const generatePassword = () => {
@@ -248,6 +264,57 @@ export default function Dashboard() {
     }
   };
 
+  const handleToggleRankPermission = (code) => {
+    if (docSelectedRanks.includes(code)) {
+      setDocSelectedRanks(docSelectedRanks.filter((r) => r !== code));
+    } else {
+      setDocSelectedRanks([...docSelectedRanks, code]);
+    }
+  };
+
+  const handleCreateDocument = async (e) => {
+    e.preventDefault();
+    if (!userProfile || !isHicom(userProfile.code)) return;
+    if (!docTitle || !docContent) return;
+
+    setSubmittingDoc(true);
+
+    const newDoc = {
+      title: docTitle,
+      content: docContent,
+      allowed_ranks: docSelectedRanks,
+      created_by: userProfile?.username || 'HICOM',
+    };
+
+    const { error } = await supabase.from('documents').insert([newDoc]);
+
+    if (!error) {
+      setDocTitle('');
+      setDocContent('');
+      setDocSelectedRanks(['O6', 'O7', 'O8', 'O9', 'O10']);
+      await loadDocuments();
+    } else {
+      alert('Error creating document: ' + error.message);
+    }
+
+    setSubmittingDoc(false);
+  };
+
+  const handleRemoveDocument = async (doc) => {
+    if (!userProfile || !isHicom(userProfile.code)) return;
+    const confirmDelete = confirm(`Are you sure you want to delete document "${doc.title}"?`);
+    if (!confirmDelete) return;
+
+    try {
+      const { error } = await supabase.from('documents').delete().eq('id', doc.id);
+      if (error) throw error;
+      if (selectedDocument?.id === doc.id) setSelectedDocument(null);
+      await loadDocuments();
+    } catch (err) {
+      alert('Error removing document: ' + err.message);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('dhs_user');
     router.push('/');
@@ -265,6 +332,12 @@ export default function Dashboard() {
   }
 
   const userIsHicom = isHicom(userProfile?.code);
+
+  // Filter documents: HICOM can see all, others can only see documents where their rank code is included in allowed_ranks
+  const visibleDocuments = documents.filter((doc) => {
+    if (userIsHicom) return true;
+    return doc.allowed_ranks && doc.allowed_ranks.includes(userProfile?.code);
+  });
 
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-cyan-500 selection:text-black flex flex-col">
@@ -339,12 +412,24 @@ export default function Dashboard() {
               <span>►</span>
               <span>Blacklists</span>
             </button>
+
+            <button
+              onClick={() => setActiveTab('documents')}
+              className={`w-full text-left px-3 py-2 rounded text-xs font-mono flex items-center space-x-2 transition-all ${
+                activeTab === 'documents'
+                  ? 'bg-cyan-950/60 border border-cyan-500/50 text-cyan-400 font-bold'
+                  : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+              }`}
+            >
+              <span>►</span>
+              <span>Documents ({visibleDocuments.length})</span>
+            </button>
           </div>
 
           <div className="bg-slate-950/80 border border-slate-800 p-3 rounded text-[11px] font-mono text-slate-400 space-y-1">
             <div className="text-slate-500 uppercase tracking-wider text-[9px]">Authorization Level</div>
             <div className={userIsHicom ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold'}>
-              {userIsHicom ? 'HICOM (Full Access)' : 'Standard Access (View Only)'}
+              {userIsHicom ? 'HICOM (Full Access)' : 'Standard Access'}
             </div>
           </div>
         </aside>
@@ -368,7 +453,6 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* HICOM Only Creation Form */}
                 {userIsHicom ? (
                   <form onSubmit={handleAddPersonnel} className="bg-slate-900/80 border border-cyan-900/40 p-5 rounded-lg space-y-4 backdrop-blur-sm">
                     <h3 className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-wider">
@@ -492,7 +576,6 @@ export default function Dashboard() {
                     </table>
                   </div>
 
-                  {/* Inspector Panel (Hicom only) */}
                   {userIsHicom && (
                     <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-4 font-mono space-y-4 backdrop-blur-sm self-start">
                       <h3 className="text-xs font-bold text-yellow-500 uppercase tracking-wider border-b border-slate-800 pb-2">
@@ -546,7 +629,6 @@ export default function Dashboard() {
                   </p>
                 </div>
 
-                {/* HICOM Only Blacklist Creation Form */}
                 {userIsHicom ? (
                   <form onSubmit={handleAddBlacklist} className="bg-slate-900/80 border border-red-900/40 p-4 rounded-lg space-y-4 backdrop-blur-sm">
                     <h3 className="text-xs font-mono font-bold text-red-400 uppercase tracking-wider">
@@ -636,6 +718,163 @@ export default function Dashboard() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'documents' && (
+              <div className="space-y-6">
+                <div className="border-b border-slate-800 pb-4">
+                  <h2 className="text-lg font-mono font-bold text-slate-100 tracking-wider uppercase">
+                    OFFICIAL DHS DOCUMENTS & TRYOUTS
+                  </h2>
+                  <p className="text-xs font-mono text-slate-400 mt-0.5">
+                    {userIsHicom ? 'Create and Manage Authorized Document Visibility' : 'Authorized Document Registry'}
+                  </p>
+                </div>
+
+                {userIsHicom && (
+                  <form onSubmit={handleCreateDocument} className="bg-slate-900/80 border border-cyan-900/40 p-5 rounded-lg space-y-4 backdrop-blur-sm">
+                    <h3 className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-wider">
+                      + Create New Secure Document
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Document Title</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. O6-O10 Tryout Guidelines"
+                          value={docTitle}
+                          onChange={(e) => setDocTitle(e.target.value)}
+                          required
+                          className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Document Content / Instructions</label>
+                      <textarea
+                        placeholder="Enter the secure briefing or tryout notes..."
+                        value={docContent}
+                        onChange={(e) => setDocContent(e.target.value)}
+                        required
+                        rows={4}
+                        className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-mono text-slate-400 uppercase mb-2">Select Ranks Permitted to View This Document</label>
+                      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 bg-slate-950 p-3 rounded border border-slate-800">
+                        {RANKS.map((r) => {
+                          const isChecked = docSelectedRanks.includes(r.code);
+                          return (
+                            <label key={r.code} className="flex items-center space-x-2 text-xs font-mono cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => handleToggleRankPermission(r.code)}
+                                className="rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-0"
+                              />
+                              <span className={isChecked ? 'text-cyan-400 font-bold' : 'text-slate-500'}>
+                                {r.code}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={submittingDoc}
+                      className="bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/50 text-cyan-300 text-xs font-mono px-5 py-2.5 rounded transition-all uppercase tracking-wider font-bold"
+                    >
+                      {submittingDoc ? 'Publishing...' : 'Publish Document with Target Ranks'}
+                    </button>
+                  </form>
+                )}
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-lg overflow-hidden backdrop-blur-sm">
+                    <div className="px-4 py-3 bg-slate-950/80 border-b border-slate-800 flex justify-between items-center">
+                      <span className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider">
+                        Available Documents ({visibleDocuments.length})
+                      </span>
+                    </div>
+
+                    <div className="divide-y divide-slate-800/60">
+                      {visibleDocuments.length === 0 ? (
+                        <div className="p-6 text-center text-xs font-mono text-slate-500 italic">
+                          No authorized documents available for your clearance level.
+                        </div>
+                      ) : (
+                        visibleDocuments.map((doc) => {
+                          const isSelected = selectedDocument?.id === doc.id;
+                          return (
+                            <div
+                              key={doc.id}
+                              onClick={() => setSelectedDocument(doc)}
+                              className={`p-4 cursor-pointer transition-colors ${
+                                isSelected ? 'bg-cyan-950/40 border-l-2 border-cyan-400' : 'hover:bg-cyan-950/20'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-xs font-mono font-bold text-cyan-400">{doc.title}</h4>
+                                <span className="text-[10px] font-mono text-slate-500">{new Date(doc.created_at).toLocaleDateString()}</span>
+                              </div>
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {doc.allowed_ranks?.map((code) => (
+                                  <span key={code} className="bg-slate-800 text-yellow-400 text-[9px] font-mono px-1.5 py-0.5 rounded border border-slate-700">
+                                    {code}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-4 font-mono space-y-4 backdrop-blur-sm self-start">
+                    <h3 className="text-xs font-bold text-yellow-500 uppercase tracking-wider border-b border-slate-800 pb-2">
+                      Document Reader
+                    </h3>
+                    {selectedDocument ? (
+                      <div className="space-y-3 text-xs">
+                        <div>
+                          <span className="text-[10px] text-slate-500 uppercase block">Title</span>
+                          <span className="font-bold text-white text-sm">{selectedDocument.title}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-500 uppercase block">Author / HICOM</span>
+                          <span className="text-cyan-400">{selectedDocument.created_by}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-500 uppercase block mb-1">Content</span>
+                          <div className="bg-slate-950 p-3 rounded border border-slate-800 text-slate-300 whitespace-pre-wrap leading-relaxed">
+                            {selectedDocument.content}
+                          </div>
+                        </div>
+
+                        {userIsHicom && (
+                          <button
+                            onClick={() => handleRemoveDocument(selectedDocument)}
+                            className="w-full bg-red-950/60 hover:bg-red-900 border border-red-600/50 text-red-400 text-[10px] font-mono px-3 py-2 rounded transition-all uppercase tracking-wider font-semibold mt-4"
+                          >
+                            Delete Document
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-500 italic py-6 text-center">
+                        Select a document from the list to read its contents.
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
