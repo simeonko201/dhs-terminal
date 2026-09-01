@@ -1,8 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 // COMPLETE DHS RANK HIERARCHY
 const RANKS = [
@@ -51,28 +56,23 @@ export default function Dashboard() {
   const router = useRouter();
 
   useEffect(() => {
+    const storedUser = localStorage.getItem('dhs_user');
+    if (!storedUser) {
+      router.push('/');
+      return;
+    }
+
+    try {
+      const profile = JSON.parse(storedUser);
+      setUserProfile(profile);
+    } catch (e) {
+      router.push('/');
+      return;
+    }
+
     async function fetchData() {
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.push('/');
-        return;
-      }
-
-      // Fetch logged-in user profile
-      const { data: profile } = await supabase
-        .from('users')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (profile) {
-        setUserProfile(profile);
-      }
-
       await loadPersonnel();
       await loadBlacklists();
-
       setLoading(false);
     }
 
@@ -136,6 +136,7 @@ export default function Dashboard() {
 
       const newEntry = {
         username: newUsername.trim(),
+        password: generatedPassword,
         code: rankObj.code,
         rank_name: rankObj.name,
         rank: rankObj.level,
@@ -237,8 +238,8 @@ export default function Dashboard() {
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = () => {
+    localStorage.removeItem('dhs_user');
     router.push('/');
   };
 
@@ -480,7 +481,7 @@ export default function Dashboard() {
               <div className="space-y-6">
                 <div className="border-b border-slate-800 pb-4">
                   <h2 className="text-lg font-mono font-bold text-slate-100 tracking-wider uppercase">
-                    DEPARTMENT OF HOMELAND SECURITYBLACKLIST
+                    DEPARTMENT OF HOMELAND SECURITY BLACKLIST
                   </h2>
                   <p className="text-xs font-mono text-slate-400 mt-0.5">
                     Restricted Individuals
