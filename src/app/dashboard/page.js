@@ -50,7 +50,6 @@ export default function Dashboard() {
   const [blacklistDuration, setBlacklistDuration] = useState('Permanent');
   const [submittingBlacklist, setSubmittingBlacklist] = useState(false);
 
-  // Document link creation states
   const [docTitle, setDocTitle] = useState('');
   const [docUrl, setDocUrl] = useState('');
   const [docSelectedRanks, setDocSelectedRanks] = useState(['O6', 'O7', 'O8', 'O9', 'O10']);
@@ -321,10 +320,10 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-950 text-cyan-500 flex flex-col items-center justify-center font-mono space-y-4">
-        <div className="w-10 h-10 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
-        <p className="tracking-widest text-xs uppercase animate-pulse">
-          AUTHENTICATING SECURE DHS TERMINAL...
+      <div className="min-h-screen bg-neutral-950 text-cyan-400 flex flex-col items-center justify-center font-mono space-y-4">
+        <div className="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin shadow-[0_0_15px_rgba(6,182,212,0.4)]"></div>
+        <p className="tracking-[0.3em] text-xs uppercase animate-pulse font-semibold">
+          ESTABLISHING SECURE DHS ENCRYPTED UPLINK...
         </p>
       </div>
     );
@@ -338,39 +337,46 @@ export default function Dashboard() {
   });
 
   return (
-    <div className="relative min-h-screen bg-neutral-950 text-neutral-200 font-sans selection:bg-cyan-500 selection:text-black flex flex-col overflow-x-hidden">
+    <div className="relative min-h-screen bg-[#07090e] text-neutral-100 font-sans selection:bg-cyan-500 selection:text-black flex flex-col overflow-x-hidden">
       
-      {/* Background Watermark Logo */}
-      <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-0 overflow-hidden">
+      {/* Enhanced Pro Homeland Security Background with Grid Lines & Clearer Watermark */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden flex items-center justify-center">
+        {/* Tactical Matrix Grid Overlay */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f293d10_1px,transparent_1px),linear-gradient(to_bottom,#1f293d10_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+        
+        {/* Glowing Radial Vignette for Depth */}
+        <div className="absolute inset-0 bg-radial from-cyan-950/20 via-transparent to-[#05070a] opacity-90"></div>
+
+        {/* Clear & Visible Homeland Security Emblem Watermark */}
         <div 
-          className="w-[700px] h-[700px] bg-no-repeat bg-center opacity-[0.03] scale-125 filter contrast-125"
-          style={{ backgroundImage: `url('https://cdn.discordapp.com/attachments/971121607504453672/1544332893675982928/Homeland_Security_logo_icon.png?ex=6a981f96&is=6a96ce16&hm=59d37b3269342c9e7e3bfc75a239cc4244745e6ec071cf41893239d913ef43dc&')` }}
+          className="w-[850px] h-[850px] bg-no-repeat bg-center opacity-[0.08] filter drop-shadow-[0_0_35px_rgba(6,182,212,0.15)] transition-all duration-1000 select-none"
+          style={{ backgroundImage: `url('https://cdn.discordapp.com/attachments/971121607504453672/1544332893675982928/Homeland_Security_logo_icon.png?ex=6a981f96&is=6a96ce16&hm=59d37b3269342c9e7e3bfc75a239cc4244745e6ec071cf41893239d913ef43dc&')`, backgroundSize: 'contain' }}
         ></div>
       </div>
 
       {/* Top Classified Security Ticker Banner */}
-      <div className="bg-gradient-to-r from-red-950 via-neutral-900 to-red-950 border-b border-red-900/60 text-red-400 text-[10px] font-mono tracking-[0.25em] uppercase text-center py-1.5 z-10 shadow-inner flex items-center justify-center space-x-3">
-        <span className="inline-block w-1.5 h-1.5 bg-red-500 rounded-full animate-ping"></span>
-        <span>RESTRICTED ACCESS // DEPARTMENT OF HOMELAND SECURITY // LEVEL-5 SECURE NETWORK</span>
-        <span className="inline-block w-1.5 h-1.5 bg-red-500 rounded-full animate-ping"></span>
+      <div className="bg-gradient-to-r from-red-950/90 via-neutral-950 to-red-950/90 border-b border-red-600/40 text-red-400 text-[10px] font-mono tracking-[0.3em] uppercase text-center py-2 z-10 shadow-[0_2px_10px_rgba(239,68,68,0.2)] flex items-center justify-center space-x-4">
+        <span className="inline-block w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+        <span className="font-bold">RESTRICTED ACCESS // DEPARTMENT OF HOMELAND SECURITY // LEVEL-5 SECURE NETWORK</span>
+        <span className="inline-block w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
       </div>
 
       {/* Header */}
-      <header className="bg-neutral-900/90 backdrop-blur-md border-b border-cyan-500/20 px-6 py-3 flex items-center justify-between z-10 shadow-lg">
-        <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 rounded bg-gradient-to-br from-cyan-950 to-neutral-900 border border-cyan-500/40 flex items-center justify-center shadow-md shadow-cyan-950/50">
+      <header className="bg-neutral-900/80 backdrop-blur-xl border-b border-cyan-500/30 px-8 py-4 flex items-center justify-between z-10 shadow-[0_4px_20px_rgba(0,0,0,0.6)]">
+        <div className="flex items-center space-x-4">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-cyan-950 via-neutral-900 to-neutral-950 border border-cyan-400/50 flex items-center justify-center shadow-[0_0_15px_rgba(6,182,212,0.3)]">
             <img 
               src="https://cdn.discordapp.com/attachments/971121607504453672/1544332893675982928/Homeland_Security_logo_icon.png?ex=6a981f96&is=6a96ce16&hm=59d37b3269342c9e7e3bfc75a239cc4244745e6ec071cf41893239d913ef43dc&" 
               alt="DHS Emblem" 
-              className="w-6 h-6 object-contain filter drop-shadow(0 0 2px rgba(6,182,212,0.6))"
+              className="w-7 h-7 object-contain filter drop-shadow-[0_0_6px_rgba(6,182,212,0.8)]"
             />
           </div>
           <div>
-            <h1 className="text-sm font-bold tracking-widest text-neutral-100 uppercase font-mono flex items-center space-x-2">
+            <h1 className="text-sm font-black tracking-[0.2em] text-neutral-100 uppercase font-mono flex items-center space-x-3">
               <span>U.S. HOMELAND SECURITY</span>
-              <span className="text-[10px] text-cyan-400 bg-cyan-950/80 border border-cyan-500/30 px-1.5 py-0.5 rounded">COMMAND v2.4</span>
+              <span className="text-[10px] font-bold text-cyan-300 bg-cyan-950/90 border border-cyan-500/40 px-2 py-0.5 rounded shadow-inner">COMMAND v2.4</span>
             </h1>
-            <p className="text-[10px] font-mono text-cyan-400/70 tracking-wider">
+            <p className="text-[10px] font-mono text-cyan-400/80 tracking-widest mt-0.5">
               FEDERAL LAW ENFORCEMENT & OPERATIONS PORTAL
             </p>
           </div>
@@ -379,19 +385,19 @@ export default function Dashboard() {
         <div className="flex items-center space-x-6">
           <div className="text-right border-r border-neutral-800 pr-6">
             <div className="flex items-center justify-end space-x-2">
-              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></span>
-              <p className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-wide">
+              <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)] animate-pulse"></span>
+              <p className="text-xs font-mono font-bold text-cyan-300 uppercase tracking-wider">
                 {userProfile?.username || 'User'}
               </p>
             </div>
-            <p className="text-[10px] font-mono text-neutral-400">
+            <p className="text-[10px] font-mono text-neutral-400 tracking-wider">
               [{userProfile?.code || 'E2'}] {userProfile?.rank_name || 'Cadet'}
             </p>
           </div>
 
           <button
             onClick={handleLogout}
-            className="bg-red-950/40 hover:bg-red-900/60 border border-red-500/40 hover:border-red-500 text-red-400 font-mono text-xs px-3.5 py-1.5 rounded transition-all uppercase tracking-wider shadow-sm"
+            className="bg-red-950/50 hover:bg-red-900/80 border border-red-500/50 hover:border-red-400 text-red-300 font-mono text-xs px-4 py-2 rounded transition-all uppercase tracking-widest shadow-sm font-semibold"
           >
             DISCONNECT
           </button>
@@ -402,56 +408,56 @@ export default function Dashboard() {
       <div className="flex flex-1 z-10">
         
         {/* Sidebar */}
-        <aside className="w-64 bg-neutral-900/50 backdrop-blur border-r border-neutral-800/80 p-4 flex flex-col justify-between">
-          <div className="space-y-3">
-            <p className="text-[10px] font-mono uppercase text-neutral-500 tracking-widest px-3 mb-1">
+        <aside className="w-72 bg-neutral-900/60 backdrop-blur-xl border-r border-neutral-800/80 p-5 flex flex-col justify-between shadow-2xl">
+          <div className="space-y-4">
+            <p className="text-[10px] font-mono uppercase text-neutral-400 tracking-[0.25em] px-3 mb-2 font-semibold">
               Tactical Navigation
             </p>
             
             <button
               onClick={() => setActiveTab('personnel')}
-              className={`w-full text-left px-3.5 py-2.5 rounded text-xs font-mono flex items-center space-x-3 transition-all ${
+              className={`w-full text-left px-4 py-3 rounded-lg text-xs font-mono flex items-center space-x-3 transition-all ${
                 activeTab === 'personnel'
-                  ? 'bg-cyan-950/70 border-l-2 border-cyan-400 text-cyan-300 font-bold shadow-[inset_0_1px_3px_rgba(6,182,212,0.2)]'
+                  ? 'bg-cyan-950/80 border-l-4 border-cyan-400 text-cyan-200 font-bold shadow-[0_0_15px_rgba(6,182,212,0.2)]'
                   : 'text-neutral-400 hover:bg-neutral-800/50 hover:text-neutral-200'
               }`}
             >
-              <span className="text-cyan-500 text-[10px]">■</span>
+              <span className="text-cyan-400 text-xs">■</span>
               <span className="tracking-wider">PERSONNEL ROSTER</span>
             </button>
 
             <button
               onClick={() => setActiveTab('blacklists')}
-              className={`w-full text-left px-3.5 py-2.5 rounded text-xs font-mono flex items-center space-x-3 transition-all ${
+              className={`w-full text-left px-4 py-3 rounded-lg text-xs font-mono flex items-center space-x-3 transition-all ${
                 activeTab === 'blacklists'
-                  ? 'bg-red-950/50 border-l-2 border-red-500 text-red-300 font-bold shadow-[inset_0_1px_3px_rgba(239,68,68,0.2)]'
+                  ? 'bg-red-950/70 border-l-4 border-red-500 text-red-200 font-bold shadow-[0_0_15px_rgba(239,68,68,0.2)]'
                   : 'text-neutral-400 hover:bg-neutral-800/50 hover:text-neutral-200'
               }`}
             >
-              <span className="text-red-500 text-[10px]">■</span>
+              <span className="text-red-500 text-xs">■</span>
               <span className="tracking-wider">SECURITY BLACKLIST</span>
             </button>
 
             <button
               onClick={() => setActiveTab('documents')}
-              className={`w-full text-left px-3.5 py-2.5 rounded text-xs font-mono flex items-center space-x-3 transition-all ${
+              className={`w-full text-left px-4 py-3 rounded-lg text-xs font-mono flex items-center space-x-3 transition-all ${
                 activeTab === 'documents'
-                  ? 'bg-cyan-950/70 border-l-2 border-cyan-400 text-cyan-300 font-bold shadow-[inset_0_1px_3px_rgba(6,182,212,0.2)]'
+                  ? 'bg-cyan-950/80 border-l-4 border-cyan-400 text-cyan-200 font-bold shadow-[0_0_15px_rgba(6,182,212,0.2)]'
                   : 'text-neutral-400 hover:bg-neutral-800/50 hover:text-neutral-200'
               }`}
             >
-              <span className="text-cyan-500 text-[10px]">■</span>
+              <span className="text-cyan-400 text-xs">■</span>
               <span className="tracking-wider">DOCUMENTS ({visibleDocuments.length})</span>
             </button>
           </div>
 
-          <div className="bg-neutral-950/90 border border-neutral-800/80 p-3.5 rounded space-y-1.5 shadow-inner">
-            <div className="text-neutral-500 uppercase tracking-widest text-[9px] font-mono">Security Clearance</div>
-            <div className={`font-mono text-xs font-bold tracking-wide ${userIsHicom ? 'text-emerald-400' : 'text-amber-400'}`}>
+          <div className="bg-neutral-950/90 border border-neutral-800 p-4 rounded-xl space-y-2 shadow-inner">
+            <div className="text-neutral-400 uppercase tracking-[0.2em] text-[9px] font-mono font-semibold">Security Clearance</div>
+            <div className={`font-mono text-xs font-bold tracking-wider ${userIsHicom ? 'text-emerald-400' : 'text-amber-400'}`}>
               {userIsHicom ? 'LEVEL 5 - HICOM' : 'LEVEL 2 - STANDARD'}
             </div>
-            <div className="text-[9px] font-mono text-neutral-500 pt-1 border-t border-neutral-900">
-              SECURE ENCRYPTION: ACTIVE
+            <div className="text-[9px] font-mono text-cyan-500/80 pt-2 border-t border-neutral-900 tracking-wider">
+              SECURE ENCRYPTION: ACTIVE 256-BIT
             </div>
           </div>
         </aside>
@@ -466,43 +472,43 @@ export default function Dashboard() {
                 <div className="border-b border-neutral-800 pb-4 flex items-center justify-between">
                   <div>
                     <h2 className="text-base font-mono font-bold text-neutral-100 tracking-widest uppercase flex items-center space-x-2">
-                      <span className="text-cyan-500">❖</span>
+                      <span className="text-cyan-400">❖</span>
                       <span>ACTIVE PERSONNEL DATABASE</span>
                     </h2>
-                    <p className="text-xs font-mono text-neutral-400 mt-0.5">
+                    <p className="text-xs font-mono text-neutral-400 mt-1">
                       {userIsHicom ? 'Manage Chain of Command & Agent Credentials' : 'Secure Roster Clearance View'}
                     </p>
                   </div>
-                  <div className="text-xs font-mono bg-cyan-950/40 border border-cyan-500/30 text-cyan-400 px-3 py-1.5 rounded tracking-wider shadow-sm">
+                  <div className="text-xs font-mono bg-cyan-950/60 border border-cyan-500/40 text-cyan-300 px-3.5 py-1.5 rounded-lg tracking-wider shadow-sm font-semibold">
                     TOTAL AGENTS: {allUsers.length}
                   </div>
                 </div>
 
                 {userIsHicom ? (
-                  <form onSubmit={handleAddPersonnel} className="bg-neutral-900/80 border border-cyan-900/40 p-5 rounded-lg space-y-4 backdrop-blur-md shadow-lg">
-                    <h3 className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-widest flex items-center space-x-2">
+                  <form onSubmit={handleAddPersonnel} className="bg-neutral-900/80 backdrop-blur-xl border border-cyan-900/50 p-6 rounded-xl space-y-4 shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
+                    <h3 className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-[0.2em] flex items-center space-x-2">
                       <span>[+] REGISTER NEW AGENT ACCOUNT</span>
                     </h3>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <div>
-                        <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-wider mb-1">Agent Username (Roblox)</label>
+                        <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1.5 font-semibold">Agent Username (Roblox)</label>
                         <input
                           type="text"
                           placeholder="e.g. AgentJohn"
                           value={newUsername}
                           onChange={(e) => setNewUsername(e.target.value)}
                           required
-                          className="w-full bg-neutral-950 border border-neutral-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-cyan-500 shadow-inner"
+                          className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan-400 shadow-inner"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-wider mb-1">Assign Command Rank</label>
+                        <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1.5 font-semibold">Assign Command Rank</label>
                         <select
                           value={selectedRankCode}
                           onChange={(e) => setSelectedRankCode(e.target.value)}
-                          className="w-full bg-neutral-950 border border-neutral-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-cyan-500 shadow-inner"
+                          className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan-400 shadow-inner"
                         >
                           {RANKS.map((r) => (
                             <option key={r.code} value={r.code}>
@@ -516,25 +522,25 @@ export default function Dashboard() {
                     <button
                       type="submit"
                       disabled={submittingUser}
-                      className="bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/60 text-cyan-300 text-xs font-mono px-5 py-2.5 rounded transition-all uppercase tracking-widest font-bold shadow-md shadow-cyan-950/40"
+                      className="bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/60 text-cyan-200 text-xs font-mono px-6 py-3 rounded-lg transition-all uppercase tracking-widest font-bold shadow-[0_0_15px_rgba(6,182,212,0.3)]"
                     >
                       {submittingUser ? 'Generating Encryption...' : 'Generate Password & Register Agent'}
                     </button>
                   </form>
                 ) : (
-                  <div className="bg-amber-950/20 border border-amber-500/30 p-4 rounded text-xs font-mono text-amber-400 flex items-center space-x-3">
+                  <div className="bg-amber-950/30 border border-amber-500/40 p-4 rounded-xl text-xs font-mono text-amber-300 flex items-center space-x-3 shadow-md">
                     <span>⚠️</span>
                     <span>Personnel registration is restricted to High Command (O7-O10). Your rank level permits viewing only.</span>
                   </div>
                 )}
 
                 {generatedCredentials && userIsHicom && (
-                  <div className="bg-emerald-950/40 border border-emerald-500/50 p-4 rounded-lg space-y-2 font-mono text-xs shadow-lg">
+                  <div className="bg-emerald-950/40 border border-emerald-500/60 p-5 rounded-xl space-y-3 font-mono text-xs shadow-xl backdrop-blur-md">
                     <p className="text-emerald-400 font-bold uppercase tracking-widest flex items-center space-x-2">
                       <span>✓</span>
                       <span>CREDENTIALS SUCCESSFULLY GENERATED</span>
                     </p>
-                    <div className="bg-neutral-950 p-3.5 rounded border border-neutral-800 space-y-1.5 text-neutral-300 select-all font-mono">
+                    <div className="bg-neutral-950 p-4 rounded-lg border border-neutral-800 space-y-2 text-neutral-300 select-all font-mono">
                       <p><span className="text-neutral-500">Assignment:</span> <span className="text-cyan-400 font-bold">{generatedCredentials.rankDisplay}</span></p>
                       <p><span className="text-neutral-500">Username:</span> <span className="text-white">{generatedCredentials.username}</span></p>
                       <p><span className="text-neutral-500">Secure Password:</span> <span className="text-yellow-400 font-bold">{generatedCredentials.password}</span></p>
@@ -543,19 +549,19 @@ export default function Dashboard() {
                 )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="lg:col-span-2 bg-neutral-900/60 border border-neutral-800 rounded-lg overflow-hidden backdrop-blur-md shadow-lg">
-                    <div className="px-4 py-3 bg-neutral-950/90 border-b border-neutral-800 flex justify-between items-center">
+                  <div className="lg:col-span-2 bg-neutral-900/60 border border-neutral-800 rounded-xl overflow-hidden backdrop-blur-xl shadow-2xl">
+                    <div className="px-5 py-3.5 bg-neutral-950/90 border-b border-neutral-800 flex justify-between items-center">
                       <span className="text-xs font-mono font-bold text-neutral-300 uppercase tracking-widest">
                         Chain of Command {userIsHicom ? '(Select Row for Details)' : ''}
                       </span>
                     </div>
 
                     <table className="w-full text-left text-xs font-mono">
-                      <thead className="bg-neutral-950/80 text-neutral-400 uppercase tracking-widest border-b border-neutral-800">
+                      <thead className="bg-neutral-950/80 text-neutral-400 uppercase tracking-[0.15em] border-b border-neutral-800">
                         <tr>
-                          <th className="px-4 py-3">Agent</th>
-                          <th className="px-4 py-3">Rank Code</th>
-                          {userIsHicom && <th className="px-4 py-3 text-right">Action</th>}
+                          <th className="px-5 py-3.5">Agent</th>
+                          <th className="px-5 py-3.5">Rank Code</th>
+                          {userIsHicom && <th className="px-5 py-3.5 text-right">Action</th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-neutral-800/60 text-neutral-300">
@@ -571,26 +577,26 @@ export default function Dashboard() {
                                 }
                               }}
                               className={`transition-colors ${userIsHicom ? 'cursor-pointer' : ''} ${
-                                isSelected ? 'bg-cyan-950/50 border-l-2 border-cyan-400' : userIsHicom ? 'hover:bg-cyan-950/20' : ''
+                                isSelected ? 'bg-cyan-950/60 border-l-4 border-cyan-400' : userIsHicom ? 'hover:bg-cyan-950/20' : ''
                               } ${u.rank >= 13 ? 'font-bold' : ''}`}
                             >
-                              <td className="px-4 py-3 text-cyan-400">
+                              <td className="px-5 py-3.5 text-cyan-400">
                                 <div className="font-bold text-neutral-100">{u.username}</div>
                                 <div className="text-[10px] text-neutral-400">{u.rank_name}</div>
                               </td>
-                              <td className="px-4 py-3">
-                                <span className="bg-neutral-950 border border-neutral-800 text-yellow-400 px-2.5 py-1 rounded text-[10px] tracking-wider">
+                              <td className="px-5 py-3.5">
+                                <span className="bg-neutral-950 border border-neutral-800 text-yellow-400 px-3 py-1 rounded-md text-[10px] tracking-wider font-semibold">
                                   {u.code}
                                 </span>
                               </td>
                               {userIsHicom && (
-                                <td className="px-4 py-3 text-right">
+                                <td className="px-5 py-3.5 text-right">
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       handleRemoveAgent(u);
                                     }}
-                                    className="bg-red-950/60 hover:bg-red-900 border border-red-600/50 text-red-400 text-[10px] font-mono px-3 py-1 rounded transition-all uppercase tracking-wider font-semibold"
+                                    className="bg-red-950/60 hover:bg-red-900 border border-red-600/50 text-red-300 text-[10px] font-mono px-3.5 py-1 rounded-md transition-all uppercase tracking-wider font-semibold shadow-sm"
                                   >
                                     Terminate
                                   </button>
@@ -604,29 +610,29 @@ export default function Dashboard() {
                   </div>
 
                   {userIsHicom && (
-                    <div className="bg-neutral-900/80 border border-neutral-800 rounded-lg p-4 font-mono space-y-4 backdrop-blur-md self-start shadow-lg">
-                      <h3 className="text-xs font-bold text-yellow-500 uppercase tracking-widest border-b border-neutral-800 pb-2.5">
+                    <div className="bg-neutral-900/80 border border-neutral-800 rounded-xl p-5 font-mono space-y-4 backdrop-blur-xl self-start shadow-2xl">
+                      <h3 className="text-xs font-bold text-yellow-400 uppercase tracking-[0.2em] border-b border-neutral-800 pb-3">
                         Credentials Inspector
                       </h3>
                       {selectedUser ? (
-                        <div className="space-y-3 text-xs">
+                        <div className="space-y-4 text-xs">
                           <div>
-                            <span className="text-[10px] text-neutral-500 uppercase tracking-wider block">Agent Name</span>
+                            <span className="text-[10px] text-neutral-500 uppercase tracking-widest block font-semibold">Agent Name</span>
                             <span className="font-bold text-white text-sm">{selectedUser.username}</span>
                           </div>
                           <div>
-                            <span className="text-[10px] text-neutral-500 uppercase tracking-wider block">Designation</span>
-                            <span className="text-cyan-400">[{selectedUser.code}] {selectedUser.rank_name}</span>
+                            <span className="text-[10px] text-neutral-500 uppercase tracking-widest block font-semibold">Designation</span>
+                            <span className="text-cyan-400 font-semibold">[{selectedUser.code}] {selectedUser.rank_name}</span>
                           </div>
-                          <div className="pt-2 border-t border-neutral-800">
-                            <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-1">Encrypted Password</span>
-                            <div className="flex items-center justify-between bg-neutral-950 p-2.5 rounded border border-neutral-800">
+                          <div className="pt-3 border-t border-neutral-800">
+                            <span className="text-[10px] text-neutral-500 uppercase tracking-widest block mb-1.5 font-semibold">Encrypted Password</span>
+                            <div className="flex items-center justify-between bg-neutral-950 p-3 rounded-lg border border-neutral-800">
                               <span className="tracking-widest text-yellow-400 font-bold">
                                 {showPassword ? (selectedUser.password || 'No Password Stored') : '••••••••'}
                               </span>
                               <button
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[10px] px-2.5 py-1 rounded uppercase tracking-wider"
+                                className="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[10px] px-3 py-1 rounded uppercase tracking-wider font-semibold"
                               >
                                 {showPassword ? 'Hide' : 'Reveal'}
                               </button>
@@ -634,7 +640,7 @@ export default function Dashboard() {
                           </div>
                         </div>
                       ) : (
-                        <p className="text-xs text-neutral-500 italic py-8 text-center">
+                        <p className="text-xs text-neutral-500 italic py-10 text-center">
                           Select an agent from the roster list to inspect secure clearance credentials.
                         </p>
                       )}
@@ -652,14 +658,14 @@ export default function Dashboard() {
                     <span className="text-red-500">❖</span>
                     <span>NATIONAL SECURITY BLACKLIST</span>
                   </h2>
-                  <p className="text-xs font-mono text-neutral-400 mt-0.5">
+                  <p className="text-xs font-mono text-neutral-400 mt-1">
                     {userIsHicom ? 'Manage Agency Threat List & Watchlist' : 'Watchlist Registry (View Only)'}
                   </p>
                 </div>
 
                 {userIsHicom ? (
-                  <form onSubmit={handleAddBlacklist} className="bg-neutral-900/80 border border-red-900/40 p-5 rounded-lg space-y-4 backdrop-blur-md shadow-lg">
-                    <h3 className="text-xs font-mono font-bold text-red-400 uppercase tracking-widest">
+                  <form onSubmit={handleAddBlacklist} className="bg-neutral-900/80 backdrop-blur-xl border border-red-900/50 p-6 rounded-xl space-y-4 shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
+                    <h3 className="text-xs font-mono font-bold text-red-400 uppercase tracking-[0.2em]">
                       [+] FILE NEW BLACKLIST ENTRY
                     </h3>
                     
@@ -670,14 +676,14 @@ export default function Dashboard() {
                         value={targetUsername}
                         onChange={(e) => setTargetUsername(e.target.value)}
                         required
-                        className="bg-neutral-950 border border-neutral-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-red-500 shadow-inner"
+                        className="bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-red-500 shadow-inner"
                       />
                       <input
                         type="text"
                         placeholder="Roblox ID (Optional)"
                         value={targetRobloxId}
                         onChange={(e) => setTargetRobloxId(e.target.value)}
-                        className="bg-neutral-950 border border-neutral-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-red-500 shadow-inner"
+                        className="bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-red-500 shadow-inner"
                       />
                       <input
                         type="text"
@@ -685,7 +691,7 @@ export default function Dashboard() {
                         value={blacklistDuration}
                         onChange={(e) => setBlacklistDuration(e.target.value)}
                         required
-                        className="bg-neutral-950 border border-neutral-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-red-500 shadow-inner"
+                        className="bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-red-500 shadow-inner"
                       />
                     </div>
 
@@ -695,49 +701,49 @@ export default function Dashboard() {
                       onChange={(e) => setBlacklistReason(e.target.value)}
                       required
                       rows={2}
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-red-500 shadow-inner"
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-red-500 shadow-inner"
                     />
 
                     <button
                       type="submit"
                       disabled={submittingBlacklist}
-                      className="bg-red-950 hover:bg-red-900 border border-red-500/50 text-red-300 text-xs font-mono px-5 py-2.5 rounded transition-all uppercase tracking-widest font-bold shadow-md shadow-red-950/40"
+                      className="bg-red-950 hover:bg-red-900 border border-red-500/60 text-red-200 text-xs font-mono px-6 py-3 rounded-lg transition-all uppercase tracking-widest font-bold shadow-[0_0_15px_rgba(239,68,68,0.3)]"
                     >
                       {submittingBlacklist ? 'Filing Entry...' : 'Submit Blacklist Entry'}
                     </button>
                   </form>
                 ) : (
-                  <div className="bg-amber-950/20 border border-amber-500/30 p-4 rounded text-xs font-mono text-amber-400 flex items-center space-x-3">
+                  <div className="bg-amber-950/30 border border-amber-500/40 p-4 rounded-xl text-xs font-mono text-amber-300 flex items-center space-x-3 shadow-md">
                     <span>⚠️</span>
                     <span>Blacklist modifications are restricted to High Command (O7-O10). You have viewing rights only.</span>
                   </div>
                 )}
 
-                <div className="bg-neutral-900/60 border border-neutral-800 rounded-lg overflow-hidden backdrop-blur-md shadow-lg">
+                <div className="bg-neutral-900/60 border border-neutral-800 rounded-xl overflow-hidden backdrop-blur-xl shadow-2xl">
                   <table className="w-full text-left text-xs font-mono">
-                    <thead className="bg-neutral-950/90 text-neutral-400 uppercase tracking-widest border-b border-neutral-800">
+                    <thead className="bg-neutral-950/90 text-neutral-400 uppercase tracking-[0.15em] border-b border-neutral-800">
                       <tr>
-                        <th className="px-4 py-3">Roblox User</th>
-                        <th className="px-4 py-3">Roblox ID</th>
-                        <th className="px-4 py-3">Duration</th>
-                        <th className="px-4 py-3">Reason</th>
-                        <th className="px-4 py-3">Issued By</th>
-                        {userIsHicom && <th className="px-4 py-3 text-right">Action</th>}
+                        <th className="px-5 py-3.5">Roblox User</th>
+                        <th className="px-5 py-3.5">Roblox ID</th>
+                        <th className="px-5 py-3.5">Duration</th>
+                        <th className="px-5 py-3.5">Reason</th>
+                        <th className="px-5 py-3.5">Issued By</th>
+                        {userIsHicom && <th className="px-5 py-3.5 text-right">Action</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-800/60 text-neutral-300">
                       {blacklists.map((item) => (
                         <tr key={item.id} className="hover:bg-red-950/20 transition-colors">
-                          <td className="px-4 py-3 font-semibold text-red-400">{item.roblox_username}</td>
-                          <td className="px-4 py-3 text-neutral-400">{item.roblox_id}</td>
-                          <td className="px-4 py-3 text-yellow-400 font-bold">{item.duration || 'Permanent'}</td>
-                          <td className="px-4 py-3 text-neutral-200">{item.reason}</td>
-                          <td className="px-4 py-3 font-mono text-cyan-400">{item.blacklisted_by}</td>
+                          <td className="px-5 py-3.5 font-semibold text-red-400">{item.roblox_username}</td>
+                          <td className="px-5 py-3.5 text-neutral-400">{item.roblox_id}</td>
+                          <td className="px-5 py-3.5 text-yellow-400 font-bold">{item.duration || 'Permanent'}</td>
+                          <td className="px-5 py-3.5 text-neutral-200">{item.reason}</td>
+                          <td className="px-5 py-3.5 font-mono text-cyan-400 font-semibold">{item.blacklisted_by}</td>
                           {userIsHicom && (
-                            <td className="px-4 py-3 text-right">
+                            <td className="px-5 py-3.5 text-right">
                               <button
                                 onClick={() => handleRemoveBlacklist(item)}
-                                className="bg-red-950/60 hover:bg-red-900 border border-red-600/50 text-red-400 text-[10px] font-mono px-3 py-1 rounded transition-all uppercase tracking-wider font-semibold"
+                                className="bg-red-950/60 hover:bg-red-900 border border-red-600/50 text-red-300 text-[10px] font-mono px-3.5 py-1 rounded-md transition-all uppercase tracking-wider font-semibold shadow-sm"
                               >
                                 Revoke
                               </button>
@@ -756,66 +762,66 @@ export default function Dashboard() {
               <div className="space-y-6">
                 <div className="border-b border-neutral-800 pb-4">
                   <h2 className="text-base font-mono font-bold text-neutral-100 tracking-widest uppercase flex items-center space-x-2">
-                    <span className="text-cyan-500">❖</span>
+                    <span className="text-cyan-400">❖</span>
                     <span>OFFICIAL DHS DOCUMENTS & TRYOUTS</span>
                   </h2>
-                  <p className="text-xs font-mono text-neutral-400 mt-0.5">
+                  <p className="text-xs font-mono text-neutral-400 mt-1">
                     {userIsHicom ? 'Link External Secure Documents & Set Target Ranks' : 'Authorized Document Registry'}
                   </p>
                 </div>
 
                 {userIsHicom && (
-                  <form onSubmit={handleCreateDocument} className="bg-neutral-900/80 border border-cyan-900/40 p-5 rounded-lg space-y-4 backdrop-blur-md shadow-lg">
-                    <h3 className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-widest">
+                  <form onSubmit={handleCreateDocument} className="bg-neutral-900/80 backdrop-blur-xl border border-cyan-900/50 p-6 rounded-xl space-y-5 shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
+                    <h3 className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-[0.2em]">
                       [+] LINK EXTERNAL DOCUMENT
                     </h3>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <div>
-                        <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-wider mb-1">Document Title</label>
+                        <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1.5 font-semibold">Document Title</label>
                         <input
                           type="text"
                           placeholder="e.g. O6-O10 Tryout Guidelines"
                           value={docTitle}
                           onChange={(e) => setDocTitle(e.target.value)}
                           required
-                          className="w-full bg-neutral-950 border border-neutral-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-cyan-500 shadow-inner"
+                          className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan-400 shadow-inner"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-wider mb-1">Document URL (Google Doc, Notion, etc.)</label>
+                        <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1.5 font-semibold">Document URL (Google Doc, Notion, etc.)</label>
                         <input
                           type="url"
                           placeholder="https://docs.google.com/..."
                           value={docUrl}
                           onChange={(e) => setDocUrl(e.target.value)}
                           required
-                          className="w-full bg-neutral-950 border border-neutral-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-cyan-500 shadow-inner"
+                          className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan-400 shadow-inner"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-wider mb-2">Select Ranks Permitted to View This Document</label>
-                      <div className="bg-neutral-950 p-3.5 rounded border border-neutral-800 space-y-3 shadow-inner">
+                      <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-2 font-semibold">Select Ranks Permitted to View This Document</label>
+                      <div className="bg-neutral-950 p-4 rounded-xl border border-neutral-800 space-y-4 shadow-inner">
                         {['HIGH COMMAND', 'MIDDLE COMMAND', 'LOW COMMAND'].map((cat) => {
                           const catRanks = RANKS.filter((r) => r.category === cat);
                           return (
-                            <div key={cat} className="space-y-1.5">
-                              <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest block">{cat}</span>
-                              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                            <div key={cat} className="space-y-2">
+                              <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-[0.2em] block font-semibold">{cat}</span>
+                              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
                                 {catRanks.map((r) => {
                                   const isChecked = docSelectedRanks.includes(r.code);
                                   return (
-                                    <label key={r.code} className="flex items-center space-x-2 text-xs font-mono cursor-pointer select-none bg-neutral-900/60 px-2.5 py-2 rounded border border-neutral-800 hover:border-neutral-700 transition-colors">
+                                    <label key={r.code} className="flex items-center space-x-2.5 text-xs font-mono cursor-pointer select-none bg-neutral-900/60 px-3 py-2.5 rounded-lg border border-neutral-800 hover:border-neutral-700 transition-colors">
                                       <input
                                         type="checkbox"
                                         checked={isChecked}
                                         onChange={() => handleToggleRankPermission(r.code)}
-                                        className="rounded bg-neutral-900 border-neutral-700 text-cyan-500 focus:ring-0"
+                                        className="rounded bg-neutral-900 border-neutral-700 text-cyan-400 focus:ring-0"
                                       />
-                                      <span className={isChecked ? 'text-cyan-400 font-bold' : 'text-neutral-400'}>
+                                      <span className={isChecked ? 'text-cyan-300 font-bold' : 'text-neutral-400'}>
                                         {r.code}
                                       </span>
                                     </label>
@@ -831,7 +837,7 @@ export default function Dashboard() {
                     <button
                       type="submit"
                       disabled={submittingDoc}
-                      className="bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/60 text-cyan-300 text-xs font-mono px-5 py-2.5 rounded transition-all uppercase tracking-widest font-bold shadow-md shadow-cyan-950/40"
+                      className="bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/60 text-cyan-200 text-xs font-mono px-6 py-3 rounded-lg transition-all uppercase tracking-widest font-bold shadow-[0_0_15px_rgba(6,182,212,0.3)]"
                     >
                       {submittingDoc ? 'Publishing Link...' : 'Publish Document Link with Target Ranks'}
                     </button>
@@ -839,8 +845,8 @@ export default function Dashboard() {
                 )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="lg:col-span-2 bg-neutral-900/60 border border-neutral-800 rounded-lg overflow-hidden backdrop-blur-md shadow-lg">
-                    <div className="px-4 py-3 bg-neutral-950/90 border-b border-neutral-800 flex justify-between items-center">
+                  <div className="lg:col-span-2 bg-neutral-900/60 border border-neutral-800 rounded-xl overflow-hidden backdrop-blur-xl shadow-2xl">
+                    <div className="px-5 py-3.5 bg-neutral-950/90 border-b border-neutral-800 flex justify-between items-center">
                       <span className="text-xs font-mono font-bold text-neutral-300 uppercase tracking-widest">
                         Available Document Links ({visibleDocuments.length})
                       </span>
@@ -858,17 +864,17 @@ export default function Dashboard() {
                             <div
                               key={doc.id}
                               onClick={() => setSelectedDocument(doc)}
-                              className={`p-4 cursor-pointer transition-colors ${
-                                isSelected ? 'bg-cyan-950/50 border-l-2 border-cyan-400' : 'hover:bg-cyan-950/20'
+                              className={`p-4.5 cursor-pointer transition-colors ${
+                                isSelected ? 'bg-cyan-950/60 border-l-4 border-cyan-400' : 'hover:bg-cyan-950/20'
                               }`}
                             >
                               <div className="flex items-center justify-between">
                                 <h4 className="text-xs font-mono font-bold text-cyan-400">{doc.title}</h4>
                                 <span className="text-[10px] font-mono text-neutral-500">{new Date(doc.created_at).toLocaleDateString()}</span>
                               </div>
-                              <div className="flex flex-wrap gap-1.5 mt-2.5">
+                              <div className="flex flex-wrap gap-1.5 mt-3">
                                 {doc.allowed_ranks?.map((code) => (
-                                  <span key={code} className="bg-neutral-950 text-yellow-400 text-[9px] font-mono px-2 py-0.5 rounded border border-neutral-800">
+                                  <span key={code} className="bg-neutral-950 text-yellow-400 text-[9px] font-mono px-2.5 py-0.5 rounded-md border border-neutral-800 font-semibold">
                                     {code}
                                   </span>
                                 ))}
@@ -880,27 +886,27 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  <div className="bg-neutral-900/80 border border-neutral-800 rounded-lg p-4 font-mono space-y-4 backdrop-blur-md self-start shadow-lg">
-                    <h3 className="text-xs font-bold text-yellow-500 uppercase tracking-widest border-b border-neutral-800 pb-2.5">
+                  <div className="bg-neutral-900/80 border border-neutral-800 rounded-xl p-5 font-mono space-y-4 backdrop-blur-xl self-start shadow-2xl">
+                    <h3 className="text-xs font-bold text-yellow-400 uppercase tracking-[0.2em] border-b border-neutral-800 pb-3">
                       Document Reader
                     </h3>
                     {selectedDocument ? (
-                      <div className="space-y-3.5 text-xs">
+                      <div className="space-y-4 text-xs">
                         <div>
-                          <span className="text-[10px] text-neutral-500 uppercase tracking-wider block">Title</span>
+                          <span className="text-[10px] text-neutral-500 uppercase tracking-widest block font-semibold">Title</span>
                           <span className="font-bold text-white text-sm">{selectedDocument.title}</span>
                         </div>
                         <div>
-                          <span className="text-[10px] text-neutral-500 uppercase tracking-wider block">Linked By (HICOM)</span>
-                          <span className="text-cyan-400">{selectedDocument.created_by}</span>
+                          <span className="text-[10px] text-neutral-500 uppercase tracking-widest block font-semibold">Linked By (HICOM)</span>
+                          <span className="text-cyan-400 font-semibold">{selectedDocument.created_by}</span>
                         </div>
                         <div>
-                          <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-1">Secure External Link</span>
+                          <span className="text-[10px] text-neutral-500 uppercase tracking-widest block mb-1.5 font-semibold">Secure External Link</span>
                           <a
                             href={selectedDocument.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="block bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/60 text-cyan-200 p-3 rounded text-center font-bold tracking-widest uppercase transition-all shadow-md shadow-cyan-950/50"
+                            className="block bg-cyan-950/90 hover:bg-cyan-900 border border-cyan-500/60 text-cyan-200 p-3 rounded-lg text-center font-bold tracking-widest uppercase transition-all shadow-[0_0_15px_rgba(6,182,212,0.3)]"
                           >
                             Open Document ↗
                           </a>
@@ -909,14 +915,14 @@ export default function Dashboard() {
                         {userIsHicom && (
                           <button
                             onClick={() => handleRemoveDocument(selectedDocument)}
-                            className="w-full bg-red-950/60 hover:bg-red-900 border border-red-600/50 text-red-400 text-[10px] font-mono px-3 py-2 rounded transition-all uppercase tracking-wider font-semibold mt-4"
+                            className="w-full bg-red-950/60 hover:bg-red-900 border border-red-600/50 text-red-300 text-[10px] font-mono px-3.5 py-2.5 rounded-lg transition-all uppercase tracking-wider font-semibold mt-4 shadow-sm"
                           >
                             Delete Document Link
                           </button>
                         )}
                       </div>
                     ) : (
-                      <p className="text-xs text-neutral-500 italic py-8 text-center">
+                      <p className="text-xs text-neutral-500 italic py-10 text-center">
                         Select a document from the list to open its link.
                       </p>
                     )}
