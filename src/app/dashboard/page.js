@@ -46,6 +46,10 @@ export default function Dashboard() {
   const [blacklistDuration, setBlacklistDuration] = useState('Permanent');
   const [submittingBlacklist, setSubmittingBlacklist] = useState(false);
 
+  // States for viewing/managing individual selected user credentials
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+
   const router = useRouter();
 
   useEffect(() => {
@@ -78,7 +82,14 @@ export default function Dashboard() {
       .select('*')
       .order('rank', { ascending: false });
 
-    if (usersData) setAllUsers(usersData);
+    if (usersData) {
+      setAllUsers(usersData);
+      // Keep selectedUser updated if data reloads
+      if (selectedUser) {
+        const updated = usersData.find((u) => u.id === selectedUser.id);
+        if (updated) setSelectedUser(updated);
+      }
+    }
   };
 
   const loadBlacklists = async () => {
@@ -166,6 +177,11 @@ export default function Dashboard() {
 
       const { error } = await query;
       if (error) throw error;
+
+      if (selectedUser?.id === agent.id || selectedUser?.username === agent.username) {
+        setSelectedUser(null);
+      }
+
       await loadPersonnel();
     } catch (err) {
       alert('Error removing agent: ' + err.message);
@@ -391,53 +407,106 @@ export default function Dashboard() {
                   </div>
                 )}
 
-                <div className="bg-slate-900/60 border border-slate-800 rounded-lg overflow-hidden backdrop-blur-sm">
-                  <div className="px-4 py-3 bg-slate-950/80 border-b border-slate-800">
-                    <span className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider">
-                      Chain of Command (Highest Rank First)
-                    </span>
+                {/* Main Content Layout: Table + Inspector Details View */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  
+                  {/* Roster Table (2 cols width) */}
+                  <div className="lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-lg overflow-hidden backdrop-blur-sm">
+                    <div className="px-4 py-3 bg-slate-950/80 border-b border-slate-800 flex justify-between items-center">
+                      <span className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider">
+                        Chain of Command (Click Row to Inspect)
+                      </span>
+                    </div>
+
+                    <table className="w-full text-left text-xs font-mono">
+                      <thead className="bg-slate-950/60 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                        <tr>
+                          <th className="px-4 py-3">Agent</th>
+                          <th className="px-4 py-3">Rank Code</th>
+                          <th className="px-4 py-3 text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                        {allUsers.map((u) => {
+                          const isSelected = selectedUser?.id === u.id;
+                          return (
+                            <tr 
+                              key={u.id || u.username} 
+                              onClick={() => {
+                                setSelectedUser(u);
+                                setShowPassword(false);
+                              }}
+                              className={`cursor-pointer transition-colors ${
+                                isSelected ? 'bg-cyan-950/40 border-l-2 border-cyan-400' : 'hover:bg-cyan-950/20'
+                              } ${u.rank >= 13 ? 'font-bold' : ''}`}
+                            >
+                              <td className="px-4 py-3 text-cyan-400">
+                                <div className="font-bold text-slate-100">{u.username}</div>
+                                <div className="text-[10px] text-slate-400">{u.rank_name}</div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="bg-slate-800 border border-slate-700 text-yellow-400 px-2 py-0.5 rounded text-[10px]">
+                                  {u.code}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveAgent(u);
+                                  }}
+                                  className="bg-red-950/60 hover:bg-red-900 border border-red-600/50 text-red-400 text-[10px] font-mono px-2.5 py-1 rounded transition-all uppercase tracking-wider font-semibold"
+                                >
+                                  Remove
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
 
-                  <table className="w-full text-left text-xs font-mono">
-                    <thead className="bg-slate-950/60 text-slate-400 uppercase tracking-wider border-b border-slate-800">
-                      <tr>
-                        <th className="px-4 py-3">Chain Designation</th>
-                        <th className="px-4 py-3">Username</th>
-                        <th className="px-4 py-3">Rank Code</th>
-                        <th className="px-4 py-3">Position</th>
-                        <th className="px-4 py-3 text-right">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/60 text-slate-300">
-                      {allUsers.map((u) => (
-                        <tr 
-                          key={u.id || u.username} 
-                          className={`hover:bg-cyan-950/20 transition-colors ${
-                            u.rank >= 13 ? 'bg-yellow-950/20 font-bold' : ''
-                          }`}
-                        >
-                          <td className="px-4 py-3 text-cyan-400 font-bold">
-                            {u.username} [{u.code}] {u.rank_name}
-                          </td>
-                          <td className="px-4 py-3 text-slate-100">{u.username}</td>
-                          <td className="px-4 py-3">
-                            <span className="bg-slate-800 border border-slate-700 text-yellow-400 px-2 py-0.5 rounded text-[10px]">
-                              {u.code}
+                  {/* Inspector Panel for Selected User & Password Reveal */}
+                  <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-4 font-mono space-y-4 backdrop-blur-sm self-start">
+                    <h3 className="text-xs font-bold text-yellow-500 uppercase tracking-wider border-b border-slate-800 pb-2">
+                      Personnel Credentials Inspector
+                    </h3>
+                    {selectedUser ? (
+                      <div className="space-y-3 text-xs">
+                        <div>
+                          <span className="text-[10px] text-slate-500 uppercase block">Username</span>
+                          <span className="font-bold text-white text-sm">{selectedUser.username}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-500 uppercase block">Badge Designation</span>
+                          <span className="text-cyan-400">[{selectedUser.code}] {selectedUser.rank_name}</span>
+                        </div>
+                        <div className="pt-2 border-t border-slate-800">
+                          <span className="text-[10px] text-slate-500 uppercase block mb-1">Account Password</span>
+                          <div className="flex items-center justify-between bg-slate-950 p-2 rounded border border-slate-800">
+                            <span className="tracking-widest text-yellow-400 font-bold">
+                              {showPassword ? (selectedUser.password || 'No Password Stored') : '••••••••'}
                             </span>
-                          </td>
-                          <td className="px-4 py-3 text-slate-400">{u.rank_name}</td>
-                          <td className="px-4 py-3 text-right">
                             <button
-                              onClick={() => handleRemoveAgent(u)}
-                              className="bg-red-950/60 hover:bg-red-900 border border-red-600/50 text-red-400 text-[10px] font-mono px-2.5 py-1 rounded transition-all uppercase tracking-wider font-semibold"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] px-2 py-1 rounded uppercase tracking-wider"
                             >
-                              Remove
+                              {showPassword ? 'Hide' : 'Reveal'}
                             </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-slate-500 italic pt-2">
+                          * Share this password securely with the user if they forgot it.
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-500 italic py-6 text-center">
+                        Click on any agent row in the table to view their secure credentials and details.
+                      </p>
+                    )}
+                  </div>
+
                 </div>
               </div>
             )}
