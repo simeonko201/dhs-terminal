@@ -31,7 +31,6 @@ const isHicom = (rankCode) => {
   return ['O7', 'O8', 'O9', 'O10'].includes(rankCode);
 };
 
-// Funkcia na automatické určenie bezpečnostného clearance levelu a štýlu podľa hodnosti
 const getClearanceDetails = (rankCode) => {
   if (['O10', 'O9', 'O8', 'O7'].includes(rankCode)) {
     return {
@@ -270,7 +269,7 @@ export default function Dashboard() {
   const handleRemoveBlacklist = async (item) => {
     if (!userProfile || !isHicom(userProfile.code)) return;
     const confirmDelete = confirm(
-      `Are you sure you want to remove "${item.roblox_username}"from Blacklist?`
+      `Are you sure you want to remove "${item.roblox_username}" from the National Security Blacklist?`
     );
 
     if (!confirmDelete) return;
@@ -369,22 +368,22 @@ export default function Dashboard() {
   return (
     <div className="relative min-h-screen bg-[#07090e] text-neutral-100 font-sans selection:bg-cyan-500 selection:text-black flex flex-col overflow-x-hidden">
       
-      {/* Enhanced Pro Homeland Security Background with Grid Lines & Clearer Watermark */}
-      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden flex items-center justify-center">
+      {/* Enhanced Pro Homeland Security Background with Grid Lines & Fully Visible Watermark */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden flex items-center justify-center pt-16">
         {/* Tactical Matrix Grid Overlay */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f293d10_1px,transparent_1px),linear-gradient(to_bottom,#1f293d10_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
         
         {/* Glowing Radial Vignette for Depth */}
         <div className="absolute inset-0 bg-radial from-cyan-950/20 via-transparent to-[#05070a] opacity-90"></div>
 
-        {/* Clear & Visible Homeland Security Emblem Watermark */}
+        {/* Fully Visible Homeland Security Emblem Watermark (zmenšená veľkosť aby sa zmestila celá aj s vrchnou časťou) */}
         <div 
-          className="w-[850px] h-[850px] bg-no-repeat bg-center opacity-[0.08] filter drop-shadow-[0_0_35px_rgba(6,182,212,0.15)] transition-all duration-1000 select-none"
+          className="w-[600px] h-[600px] bg-no-repeat bg-center opacity-[0.08] filter drop-shadow-[0_0_35px_rgba(6,182,212,0.15)] transition-all duration-1000 select-none transform translate-y-6"
           style={{ backgroundImage: `url('https://cdn.discordapp.com/attachments/971121607504453672/1544332893675982928/Homeland_Security_logo_icon.png?ex=6a981f96&is=6a96ce16&hm=59d37b3269342c9e7e3bfc75a239cc4244745e6ec071cf41893239d913ef43dc&')`, backgroundSize: 'contain' }}
         ></div>
       </div>
 
-      {/* Top Classified Security Ticker Banner - Dynamicky menený podľa hodnosti používateľa */}
+      {/* Top Classified Security Ticker Banner */}
       <div className={`bg-gradient-to-r ${clearance.bannerBg} border-b ${clearance.borderColor} ${clearance.textColor} text-[10px] font-mono tracking-[0.3em] uppercase text-center py-2 z-10 shadow-lg flex items-center justify-center space-x-4`}>
         <span className={`inline-block w-2 h-2 ${clearance.dotColor} rounded-full animate-ping`}></span>
         <span className="font-bold">RESTRICTED ACCESS // DEPARTMENT OF HOMELAND SECURITY // {clearance.levelText}</span>
@@ -465,7 +464,7 @@ export default function Dashboard() {
               }`}
             >
               <span className="text-red-500 text-xs">■</span>
-              <span className="tracking-wider">BLACKLISTS</span>
+              <span className="tracking-wider">SECURITY BLACKLIST</span>
             </button>
 
             <button
@@ -590,7 +589,7 @@ export default function Dashboard() {
                       <thead className="bg-neutral-950/80 text-neutral-400 uppercase tracking-[0.15em] border-b border-neutral-800">
                         <tr>
                           <th className="px-5 py-3.5">Agent</th>
-                          <th className="px-5 py-3.5">Rank</th>
+                          <th className="px-5 py-3.5">Rank Code</th>
                           {userIsHicom && <th className="px-5 py-3.5 text-right">Action</th>}
                         </tr>
                       </thead>
@@ -686,7 +685,7 @@ export default function Dashboard() {
                 <div className="border-b border-neutral-800 pb-4">
                   <h2 className="text-base font-mono font-bold text-neutral-100 tracking-widest uppercase flex items-center space-x-2">
                     <span className="text-red-500">❖</span>
-                    <span>BLACKLISTS</span>
+                    <span>NATIONAL SECURITY BLACKLIST</span>
                   </h2>
                   <p className="text-xs font-mono text-neutral-400 mt-1">
                     {userIsHicom ? 'Manage Agency Threat List & Watchlist' : 'Watchlist Registry (View Only)'}
