@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+
+import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 
@@ -8,77 +9,537 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-export default function LoginPage() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+// COMPLETE DHS RANK HIERARCHY
+const RANKS = [
+  { code: 'O10', name: 'Director', level: 16, category: 'HIGH COMMAND' },
+  { code: 'O9', name: 'Deputy Director', level: 15, category: 'HIGH COMMAND' },
+  { code: 'O8', name: 'Assistant Director', level: 14, category: 'HIGH COMMAND' },
+  { code: 'O7', name: 'Special Agent in Charge', level: 13, category: 'HIGH COMMAND' },
+  { code: 'O6', name: 'Assistant Special Agent in Charge', level: 12, category: 'MIDDLE COMMAND' },
+  { code: 'O5', name: 'Executive Inspector', level: 11, category: 'MIDDLE COMMAND' },
+  { code: 'O4', name: 'Supervisory Special Agent', level: 10, category: 'MIDDLE COMMAND' },
+  { code: 'O3', name: 'Supervisory Agent', level: 9, category: 'MIDDLE COMMAND' },
+  { code: 'O2', name: 'Senior Special Agent', level: 8, category: 'MIDDLE COMMAND' },
+  { code: 'O1', name: 'Special Agent', level: 7, category: 'MIDDLE COMMAND' },
+  { code: 'E7', name: 'Field Supervisor', level: 6, category: 'LOW COMMAND' },
+  { code: 'E6', name: 'Senior Agent', level: 5, category: 'LOW COMMAND' },
+  { code: 'E4', name: 'Agent', level: 4, category: 'LOW COMMAND' },
+  { code: 'E3', name: 'Junior Agent', level: 3, category: 'LOW COMMAND' },
+  { code: 'E2', name: 'Cadet', level: 2, category: 'LOW COMMAND' },
+];
+
+export default function Dashboard() {
+  const [userProfile, setUserProfile] = useState(null);
+  const [allUsers, setAllUsers] = useState([]);
+  const [blacklists, setBlacklists] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('personnel');
+
+  const [newUsername, setNewUsername] = useState('');
+  const [selectedRankCode, setSelectedRankCode] = useState('E2');
+  const [submittingUser, setSubmittingUser] = useState(false);
+  const [generatedCredentials, setGeneratedCredentials] = useState(null);
+
+  const [targetUsername, setTargetUsername] = useState('');
+  const [targetRobloxId, setTargetRobloxId] = useState('');
+  const [blacklistReason, setBlacklistReason] = useState('');
+  const [blacklistDuration, setBlacklistDuration] = useState('Permanent');
+  const [submittingBlacklist, setSubmittingBlacklist] = useState(false);
+
   const router = useRouter();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError('');
-
-    const { data: userRecord, error: dbError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('username', username.trim())
-      .maybeSingle();
-
-    if (dbError || !userRecord) {
-      setError('Invalid username or password.');
+  useEffect(() => {
+    const storedUser = localStorage.getItem('dhs_user');
+    if (!storedUser) {
+      router.push('/');
       return;
     }
 
-    if (userRecord.password === password) {
-      localStorage.setItem('dhs_user', JSON.stringify(userRecord));
-      router.push('/dashboard');
-    } else {
-      setError('Invalid username or password.');
+    try {
+      const profile = JSON.parse(storedUser);
+      setUserProfile(profile);
+    } catch (e) {
+      router.push('/');
+      return;
+    }
+
+    async function fetchData() {
+      await loadPersonnel();
+      await loadBlacklists();
+      setLoading(false);
+    }
+
+    fetchData();
+  }, [router]);
+
+  const loadPersonnel = async () => {
+    const { data: usersData } = await supabase
+      .from('users')
+      .select('*')
+      .order('rank', { ascending: false });
+
+    if (usersData) setAllUsers(usersData);
+  };
+
+  const loadBlacklists = async () => {
+    const { data: blacklistData } = await supabase
+      .from('blacklists')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (blacklistData) setBlacklists(blacklistData);
+  };
+
+  const generatePassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let randStr = '';
+    for (let i = 0; i < 8; i++) {
+      randStr += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return `DHS-${randStr}`;
+  };
+
+  const handleAddPersonnel = async (e) => {
+    e.preventDefault();
+    if (!newUsername) return;
+
+    setSubmittingUser(true);
+    setGeneratedCredentials(null);
+
+    const rankObj = RANKS.find((r) => r.code === selectedRankCode) || RANKS[RANKS.length - 1];
+    const generatedPassword = generatePassword();
+
+    try {
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('username')
+        .eq('username', newUsername.trim())
+        .maybeSingle();
+
+      if (existingUser) {
+        alert('An agent with this username already exists in the roster!');
+        setSubmittingUser(false);
+        return;
+      }
+
+      const newEntry = {
+        username: newUsername.trim(),
+        password: generatedPassword,
+        code: rankObj.code,
+        rank_name: rankObj.name,
+        rank: rankObj.level,
+      };
+
+      const { error: dbError } = await supabase.from('users').insert([newEntry]);
+      if (dbError) throw dbError;
+
+      setGeneratedCredentials({
+        username: newUsername.trim(),
+        password: generatedPassword,
+        rankDisplay: `${newUsername.trim()} [${rankObj.code}] ${rankObj.name}`,
+      });
+
+      setNewUsername('');
+      setSelectedRankCode('E2');
+      await loadPersonnel();
+    } catch (err) {
+      alert('Error adding personnel: ' + err.message);
+    } finally {
+      setSubmittingUser(false);
     }
   };
 
+  const handleRemoveAgent = async (agent) => {
+    const confirmDelete = confirm(
+      `Are you sure you want to terminate & remove agent "${agent.username}" [${agent.code}] from the DHS Roster?`
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      let query = supabase.from('users').delete();
+      if (agent.id) {
+        query = query.eq('id', agent.id);
+      } else {
+        query = query.eq('username', agent.username);
+      }
+
+      const { error } = await query;
+      if (error) throw error;
+      await loadPersonnel();
+    } catch (err) {
+      alert('Error removing agent: ' + err.message);
+    }
+  };
+
+  const handleAddBlacklist = async (e) => {
+    e.preventDefault();
+    if (!targetUsername || !blacklistReason) return;
+
+    setSubmittingBlacklist(true);
+
+    const newEntry = {
+      roblox_username: targetUsername,
+      roblox_id: targetRobloxId || 'N/A',
+      reason: blacklistReason,
+      duration: blacklistDuration || 'Permanent',
+      blacklisted_by: userProfile?.username || 'simeonko201',
+    };
+
+    const { error } = await supabase.from('blacklists').insert([newEntry]);
+
+    if (!error) {
+      setTargetUsername('');
+      setTargetRobloxId('');
+      setBlacklistReason('');
+      setBlacklistDuration('Permanent');
+      await loadBlacklists();
+    } else {
+      alert('Error adding blacklist entry: ' + error?.message);
+    }
+
+    setSubmittingBlacklist(false);
+  };
+
+  const handleRemoveBlacklist = async (item) => {
+    const confirmDelete = confirm(
+      `Are you sure you want to remove "${item.roblox_username}" from the National Security Blacklist?`
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      const { error } = await supabase.from('blacklists').delete().eq('id', item.id);
+      if (error) throw error;
+      await loadBlacklists();
+    } catch (err) {
+      alert('Error removing blacklist entry: ' + err.message);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('dhs_user');
+    router.push('/');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-cyan-500 flex flex-col items-center justify-center font-mono space-y-4">
+        <div className="w-10 h-10 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
+        <p className="tracking-widest text-xs uppercase animate-pulse">
+          Connecting to DHS Secure Database...
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 flex items-center justify-center font-mono">
-      <div className="bg-slate-900 border border-cyan-900/40 p-8 rounded-lg w-full max-w-md shadow-2xl space-y-6">
-        <div>
-          <h1 className="text-lg font-bold text-slate-100 uppercase tracking-wider">DHS Terminal Login</h1>
-          <p className="text-xs text-cyan-400/70 tracking-widest mt-1">RESTRICTED ACCESS ONLY</p>
+    <div className="relative min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-cyan-500 selection:text-black flex flex-col">
+      <div className="bg-red-950/80 border-b border-red-900/50 text-red-400 text-[10px] font-mono tracking-widest uppercase text-center py-1 z-10">
+        TOP SECRET // ROBLOX DHS PERSONNEL NETWORK // FOR OFFICIAL USE ONLY
+      </div>
+
+      <header className="bg-slate-900/80 backdrop-blur border-b border-cyan-900/30 px-6 py-3 flex items-center justify-between z-10">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 rounded bg-cyan-950 border border-cyan-500/40 flex items-center justify-center">
+            <span className="text-cyan-400 font-mono font-bold text-xs">DHS</span>
+          </div>
+          <div>
+            <h1 className="text-sm font-bold tracking-wider text-slate-100 uppercase font-mono">
+              Department of Homeland Security
+            </h1>
+            <p className="text-[10px] font-mono text-cyan-400/70 tracking-widest">
+              OFFICIAL PERSONNEL TERMINAL
+            </p>
+          </div>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block text-[10px] uppercase text-slate-400 mb-1">Username</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500"
-              placeholder="e.g. simeonko201"
-            />
+        <div className="flex items-center space-x-6">
+          <div className="text-right border-r border-slate-800 pr-6">
+            <div className="flex items-center justify-end space-x-2">
+              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <p className="text-xs font-mono font-semibold text-cyan-400 uppercase">
+                {userProfile?.username || 'simeonko201'}
+              </p>
+            </div>
+            <p className="text-[10px] font-mono text-slate-400">
+              [{userProfile?.code || 'O10'}] {userProfile?.rank_name || 'Director'}
+            </p>
           </div>
-
-          <div>
-            <label className="block text-[10px] uppercase text-slate-400 mb-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500"
-              placeholder="DHS-XXXXXXXX"
-            />
-          </div>
-
-          {error && <p className="text-red-400 text-xs">{error}</p>}
 
           <button
-            type="submit"
-            className="w-full bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/50 text-cyan-300 text-xs font-bold py-2.5 rounded transition-all uppercase tracking-wider"
+            onClick={handleLogout}
+            className="bg-red-950/40 hover:bg-red-900/60 border border-red-500/40 text-red-400 font-mono text-xs px-3 py-1.5 rounded transition-all uppercase tracking-wider"
           >
-            Authenticate
+            LOGOUT
           </button>
-        </form>
+        </div>
+      </header>
+
+      <div className="flex flex-1 z-10">
+        <aside className="w-64 bg-slate-900/40 border-r border-slate-800/80 p-4 flex flex-col justify-between">
+          <div className="space-y-2">
+            <p className="text-[10px] font-mono uppercase text-slate-500 tracking-wider px-3 mb-2">
+              Agency Modules
+            </p>
+            
+            <button
+              onClick={() => setActiveTab('personnel')}
+              className={`w-full text-left px-3 py-2 rounded text-xs font-mono flex items-center space-x-2 transition-all ${
+                activeTab === 'personnel'
+                  ? 'bg-cyan-950/60 border border-cyan-500/50 text-cyan-400 font-bold'
+                  : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+              }`}
+            >
+              <span>►</span>
+              <span>Personnel</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('blacklists')}
+              className={`w-full text-left px-3 py-2 rounded text-xs font-mono flex items-center space-x-2 transition-all ${
+                activeTab === 'blacklists'
+                  ? 'bg-cyan-950/60 border border-cyan-500/50 text-cyan-400 font-bold'
+                  : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+              }`}
+            >
+              <span>►</span>
+              <span>Blacklists</span>
+            </button>
+          </div>
+
+          <div className="bg-slate-950/80 border border-slate-800 p-3 rounded text-[11px] font-mono text-slate-400 space-y-1">
+            <div className="text-slate-500 uppercase tracking-wider text-[9px]">Logged In As</div>
+            <div className="text-cyan-400 font-bold">
+              {userProfile?.username || 'simeonko201'} [{userProfile?.code || 'O10'}]
+            </div>
+          </div>
+        </aside>
+
+        <main className="flex-1 p-8 overflow-y-auto">
+          <div className="max-w-6xl mx-auto space-y-6">
+
+            {activeTab === 'personnel' && (
+              <div className="space-y-6">
+                <div className="border-b border-slate-800 pb-4 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-mono font-bold text-slate-100 tracking-wider uppercase">
+                      PERSONNEL REGISTRATION
+                    </h2>
+                    <p className="text-xs font-mono text-slate-400 mt-0.5">
+                      Create Agent Accounts & Manage Hierarchy
+                    </p>
+                  </div>
+                  <div className="text-xs font-mono bg-cyan-950/50 border border-cyan-500/30 text-cyan-400 px-3 py-1.5 rounded">
+                    ACTIVE ROSTER: {allUsers.length}
+                  </div>
+                </div>
+
+                <form onSubmit={handleAddPersonnel} className="bg-slate-900/80 border border-cyan-900/40 p-5 rounded-lg space-y-4 backdrop-blur-sm">
+                  <h3 className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-wider">
+                    + Register New Agent (Auto-Generate Password)
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Roblox Username</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. AgentJohn"
+                        value={newUsername}
+                        onChange={(e) => setNewUsername(e.target.value)}
+                        required
+                        className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Assigned Rank</label>
+                      <select
+                        value={selectedRankCode}
+                        onChange={(e) => setSelectedRankCode(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
+                      >
+                        {RANKS.map((r) => (
+                          <option key={r.code} value={r.code}>
+                            [{r.code}] {r.name} ({r.category})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={submittingUser}
+                    className="bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/50 text-cyan-300 text-xs font-mono px-5 py-2.5 rounded transition-all uppercase tracking-wider font-bold"
+                  >
+                    {submittingUser ? 'Generating Access...' : 'Generate Password & Register Agent'}
+                  </button>
+                </form>
+
+                {generatedCredentials && (
+                  <div className="bg-emerald-950/40 border border-emerald-500/50 p-4 rounded-lg space-y-2 font-mono text-xs">
+                    <p className="text-emerald-400 font-bold uppercase tracking-wider">
+                      ✓ ACCOUNT SUCCESSFULLY CREATED
+                    </p>
+                    <div className="bg-slate-950 p-3 rounded border border-slate-800 space-y-1 text-slate-300 select-all">
+                      <p><span className="text-slate-500">Chain Title:</span> <span className="text-cyan-400 font-bold">{generatedCredentials.rankDisplay}</span></p>
+                      <p><span className="text-slate-500">Login Username:</span> <span className="text-white">{generatedCredentials.username}</span></p>
+                      <p><span className="text-slate-500">Generated Password:</span> <span className="text-yellow-400 font-bold">{generatedCredentials.password}</span></p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="bg-slate-900/60 border border-slate-800 rounded-lg overflow-hidden backdrop-blur-sm">
+                  <div className="px-4 py-3 bg-slate-950/80 border-b border-slate-800">
+                    <span className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider">
+                      Chain of Command (Highest Rank First)
+                    </span>
+                  </div>
+
+                  <table className="w-full text-left text-xs font-mono">
+                    <thead className="bg-slate-950/60 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                      <tr>
+                        <th className="px-4 py-3">Chain Designation</th>
+                        <th className="px-4 py-3">Username</th>
+                        <th className="px-4 py-3">Rank Code</th>
+                        <th className="px-4 py-3">Position</th>
+                        <th className="px-4 py-3 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                      {allUsers.map((u) => (
+                        <tr 
+                          key={u.id || u.username} 
+                          className={`hover:bg-cyan-950/20 transition-colors ${
+                            u.rank >= 13 ? 'bg-yellow-950/20 font-bold' : ''
+                          }`}
+                        >
+                          <td className="px-4 py-3 text-cyan-400 font-bold">
+                            {u.username} [{u.code}] {u.rank_name}
+                          </td>
+                          <td className="px-4 py-3 text-slate-100">{u.username}</td>
+                          <td className="px-4 py-3">
+                            <span className="bg-slate-800 border border-slate-700 text-yellow-400 px-2 py-0.5 rounded text-[10px]">
+                              {u.code}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-slate-400">{u.rank_name}</td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              onClick={() => handleRemoveAgent(u)}
+                              className="bg-red-950/60 hover:bg-red-900 border border-red-600/50 text-red-400 text-[10px] font-mono px-2.5 py-1 rounded transition-all uppercase tracking-wider font-semibold"
+                            >
+                              Remove
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'blacklists' && (
+              <div className="space-y-6">
+                <div className="border-b border-slate-800 pb-4">
+                  <h2 className="text-lg font-mono font-bold text-slate-100 tracking-wider uppercase">
+                    DEPARTMENT OF HOMELAND SECURITY BLACKLIST
+                  </h2>
+                  <p className="text-xs font-mono text-slate-400 mt-0.5">
+                    Restricted Individuals
+                  </p>
+                </div>
+
+                <form onSubmit={handleAddBlacklist} className="bg-slate-900/80 border border-red-900/40 p-4 rounded-lg space-y-4 backdrop-blur-sm">
+                  <h3 className="text-xs font-mono font-bold text-red-400 uppercase tracking-wider">
+                    + Log New Blacklist Entry
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <input
+                      type="text"
+                      placeholder="Roblox Username"
+                      value={targetUsername}
+                      onChange={(e) => setTargetUsername(e.target.value)}
+                      required
+                      className="bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-red-500"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Roblox ID (Optional)"
+                      value={targetRobloxId}
+                      onChange={(e) => setTargetRobloxId(e.target.value)}
+                      className="bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-red-500"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Duration (e.g. Permanent)"
+                      value={blacklistDuration}
+                      onChange={(e) => setBlacklistDuration(e.target.value)}
+                      required
+                      className="bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-red-500"
+                    />
+                  </div>
+
+                  <textarea
+                    placeholder="Reason for Blacklist..."
+                    value={blacklistReason}
+                    onChange={(e) => setBlacklistReason(e.target.value)}
+                    required
+                    rows={2}
+                    className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-red-500"
+                  />
+
+                  <button
+                    type="submit"
+                    disabled={submittingBlacklist}
+                    className="bg-red-950 hover:bg-red-900 border border-red-500/50 text-red-300 text-xs font-mono px-4 py-2 rounded transition-all uppercase tracking-wider"
+                  >
+                    {submittingBlacklist ? 'Filing Entry...' : 'Submit Blacklist Entry'}
+                  </button>
+                </form>
+
+                <div className="bg-slate-900/60 border border-slate-800 rounded-lg overflow-hidden backdrop-blur-sm">
+                  <table className="w-full text-left text-xs font-mono">
+                    <thead className="bg-slate-950/80 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                      <tr>
+                        <th className="px-4 py-3">Roblox User</th>
+                        <th className="px-4 py-3">Roblox ID</th>
+                        <th className="px-4 py-3">Duration</th>
+                        <th className="px-4 py-3">Reason</th>
+                        <th className="px-4 py-3">Issued By</th>
+                        <th className="px-4 py-3 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                      {blacklists.map((item) => (
+                        <tr key={item.id} className="hover:bg-red-950/20 transition-colors">
+                          <td className="px-4 py-3 font-semibold text-red-400">{item.roblox_username}</td>
+                          <td className="px-4 py-3 text-slate-400">{item.roblox_id}</td>
+                          <td className="px-4 py-3 text-yellow-400 font-bold">{item.duration || 'Permanent'}</td>
+                          <td className="px-4 py-3 text-slate-200">{item.reason}</td>
+                          <td className="px-4 py-3 font-mono text-cyan-400">{item.blacklisted_by}</td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              onClick={() => handleRemoveBlacklist(item)}
+                              className="bg-red-950/60 hover:bg-red-900 border border-red-600/50 text-red-400 text-[10px] font-mono px-2.5 py-1 rounded transition-all uppercase tracking-wider font-semibold"
+                            >
+                              Remove
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+          </div>
+        </main>
       </div>
     </div>
   );
