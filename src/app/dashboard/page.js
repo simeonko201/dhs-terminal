@@ -10,6 +10,9 @@ const supabase = createClient(
 );
 
 const RANKS = [
+  { code: 'SEC', name: 'Secretary of Homeland Security', level: 19, category: 'EXECUTIVE COMMAND' },
+  { code: 'DEPSEC', name: 'Deputy Secretary of Homeland Security', level: 18, category: 'EXECUTIVE COMMAND' },
+  { code: 'UNDSEC', name: 'Under Secretary of Homeland Security', level: 17, category: 'EXECUTIVE COMMAND' },
   { code: 'O10', name: 'Director', level: 16, category: 'HIGH COMMAND' },
   { code: 'O9', name: 'Deputy Director', level: 15, category: 'HIGH COMMAND' },
   { code: 'O8', name: 'Assistant Director', level: 14, category: 'HIGH COMMAND' },
@@ -28,11 +31,11 @@ const RANKS = [
 ];
 
 const isHicom = (rankCode) => {
-  return ['O7', 'O8', 'O9', 'O10'].includes(rankCode);
+  return ['SEC', 'DEPSEC', 'UNDSEC', 'O7', 'O8', 'O9', 'O10'].includes(rankCode);
 };
 
 const getClearanceDetails = (rankCode) => {
-  if (['O10', 'O9', 'O8', 'O7'].includes(rankCode)) {
+  if (['SEC', 'DEPSEC', 'UNDSEC', 'O10', 'O9', 'O8', 'O7'].includes(rankCode)) {
     return {
       levelText: 'LEVEL-5 SECURE NETWORK',
       bannerBg: 'from-red-950/90 via-neutral-950 to-red-950/90',
@@ -81,7 +84,7 @@ export default function Dashboard() {
 
   const [docTitle, setDocTitle] = useState('');
   const [docUrl, setDocUrl] = useState('');
-  const [docSelectedRanks, setDocSelectedRanks] = useState(['O6', 'O7', 'O8', 'O9', 'O10']);
+  const [docSelectedRanks, setDocSelectedRanks] = useState(['O6', 'O7', 'O8', 'O9', 'O10', 'UNDSEC', 'DEPSEC', 'SEC']);
   const [submittingDoc, setSubmittingDoc] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState(null);
 
@@ -334,7 +337,7 @@ export default function Dashboard() {
     if (!error) {
       setDocTitle('');
       setDocUrl('');
-      setDocSelectedRanks(['O6', 'O7', 'O8', 'O9', 'O10']);
+      setDocSelectedRanks(['O6', 'O7', 'O8', 'O9', 'O10', 'UNDSEC', 'DEPSEC', 'SEC']);
       await loadDocuments();
     } else {
       alert('Error adding document link: ' + error.message);
@@ -623,7 +626,7 @@ export default function Dashboard() {
                 ) : (
                   <div className="bg-amber-950/30 border border-amber-500/40 p-4 rounded-xl text-xs font-mono text-amber-300 flex items-center space-x-3 shadow-md">
                     <span>⚠️</span>
-                    <span>Personnel registration is restricted to High Command (O7-O10). Your rank level permits viewing only.</span>
+                    <span>Personnel registration is restricted to High Command / Executive Command. Your rank level permits viewing only.</span>
                   </div>
                 )}
 
@@ -813,7 +816,7 @@ export default function Dashboard() {
                 ) : (
                   <div className="bg-amber-950/30 border border-amber-500/40 p-4 rounded-xl text-xs font-mono text-amber-300 flex items-center space-x-3 shadow-md">
                     <span>⚠️</span>
-                    <span>Blacklist management is restricted to High Command (O7-O10).</span>
+                    <span>Blacklist management is restricted to High Command / Executive Command.</span>
                   </div>
                 )}
 
@@ -1032,7 +1035,7 @@ export default function Dashboard() {
                     <div>
                       <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-2 font-semibold">Minimum Rank Clearance Access</label>
                       <div className="flex flex-wrap gap-2">
-                        {['E2', 'E3', 'E4', 'E6', 'E7', 'O1', 'O2', 'O3', 'O4', 'O5', 'O6', 'O7', 'O8', 'O9', 'O10'].map((code) => {
+                        {['E2', 'E3', 'E4', 'E6', 'E7', 'O1', 'O2', 'O3', 'O4', 'O5', 'O6', 'O7', 'O8', 'O9', 'O10', 'UNDSEC', 'DEPSEC', 'SEC'].map((code) => {
                           const isSelected = docSelectedRanks.includes(code);
                           return (
                             <button
