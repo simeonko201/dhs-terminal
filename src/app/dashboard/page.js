@@ -9,7 +9,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-// COMPLETE DHS RANK HIERARCHY
 const RANKS = [
   { code: 'O10', name: 'Director', level: 16, category: 'HIGH COMMAND' },
   { code: 'O9', name: 'Deputy Director', level: 15, category: 'HIGH COMMAND' },
@@ -51,9 +50,9 @@ export default function Dashboard() {
   const [blacklistDuration, setBlacklistDuration] = useState('Permanent');
   const [submittingBlacklist, setSubmittingBlacklist] = useState(false);
 
-  // Document creation states
+  // Document link creation states
   const [docTitle, setDocTitle] = useState('');
-  const [docContent, setDocContent] = useState('');
+  const [docUrl, setDocUrl] = useState('');
   const [docSelectedRanks, setDocSelectedRanks] = useState(['O6', 'O7', 'O8', 'O9', 'O10']);
   const [submittingDoc, setSubmittingDoc] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState(null);
@@ -275,13 +274,13 @@ export default function Dashboard() {
   const handleCreateDocument = async (e) => {
     e.preventDefault();
     if (!userProfile || !isHicom(userProfile.code)) return;
-    if (!docTitle || !docContent) return;
+    if (!docTitle || !docUrl) return;
 
     setSubmittingDoc(true);
 
     const newDoc = {
       title: docTitle,
-      content: docContent,
+      url: docUrl,
       allowed_ranks: docSelectedRanks,
       created_by: userProfile?.username || 'HICOM',
     };
@@ -290,11 +289,11 @@ export default function Dashboard() {
 
     if (!error) {
       setDocTitle('');
-      setDocContent('');
+      setDocUrl('');
       setDocSelectedRanks(['O6', 'O7', 'O8', 'O9', 'O10']);
       await loadDocuments();
     } else {
-      alert('Error creating document: ' + error.message);
+      alert('Error adding document link: ' + error.message);
     }
 
     setSubmittingDoc(false);
@@ -302,7 +301,7 @@ export default function Dashboard() {
 
   const handleRemoveDocument = async (doc) => {
     if (!userProfile || !isHicom(userProfile.code)) return;
-    const confirmDelete = confirm(`Are you sure you want to delete document "${doc.title}"?`);
+    const confirmDelete = confirm(`Are you sure you want to delete document link "${doc.title}"?`);
     if (!confirmDelete) return;
 
     try {
@@ -333,7 +332,6 @@ export default function Dashboard() {
 
   const userIsHicom = isHicom(userProfile?.code);
 
-  // Filter documents: HICOM can see all, others can only see documents where their rank code is included in allowed_ranks
   const visibleDocuments = documents.filter((doc) => {
     if (userIsHicom) return true;
     return doc.allowed_ranks && doc.allowed_ranks.includes(userProfile?.code);
@@ -729,14 +727,14 @@ export default function Dashboard() {
                     OFFICIAL DHS DOCUMENTS & TRYOUTS
                   </h2>
                   <p className="text-xs font-mono text-slate-400 mt-0.5">
-                    {userIsHicom ? 'Create and Manage Authorized Document Visibility' : 'Authorized Document Registry'}
+                    {userIsHicom ? 'Link External Documents & Set Target Ranks' : 'Authorized Document Registry'}
                   </p>
                 </div>
 
                 {userIsHicom && (
                   <form onSubmit={handleCreateDocument} className="bg-slate-900/80 border border-cyan-900/40 p-5 rounded-lg space-y-4 backdrop-blur-sm">
                     <h3 className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-wider">
-                      + Create New Secure Document
+                      + Link External Document
                     </h3>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -744,9 +742,21 @@ export default function Dashboard() {
                         <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Document Title</label>
                         <input
                           type="text"
-                          placeholder="e.g. O6-O10 Tryout Guidelines"
+                          placeholder="e.g. O6-O10 Tryout Google Doc"
                           value={docTitle}
                           onChange={(e) => setDocTitle(e.target.value)}
+                          required
+                          className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Document URL (Google Doc, Notion, etc.)</label>
+                        <input
+                          type="url"
+                          placeholder="https://docs.google.com/..."
+                          value={docUrl}
+                          onChange={(e) => setDocUrl(e.target.value)}
                           required
                           className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
                         />
@@ -754,34 +764,32 @@ export default function Dashboard() {
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Document Content / Instructions</label>
-                      <textarea
-                        placeholder="Enter the secure briefing or tryout notes..."
-                        value={docContent}
-                        onChange={(e) => setDocContent(e.target.value)}
-                        required
-                        rows={4}
-                        className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
-                      />
-                    </div>
-
-                    <div>
                       <label className="block text-[10px] font-mono text-slate-400 uppercase mb-2">Select Ranks Permitted to View This Document</label>
-                      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 bg-slate-950 p-3 rounded border border-slate-800">
-                        {RANKS.map((r) => {
-                          const isChecked = docSelectedRanks.includes(r.code);
+                      <div className="bg-slate-950 p-3 rounded border border-slate-800 space-y-3">
+                        {['HIGH COMMAND', 'MIDDLE COMMAND', 'LOW COMMAND'].map((cat) => {
+                          const catRanks = RANKS.filter((r) => r.category === cat);
                           return (
-                            <label key={r.code} className="flex items-center space-x-2 text-xs font-mono cursor-pointer select-none">
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() => handleToggleRankPermission(r.code)}
-                                className="rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-0"
-                              />
-                              <span className={isChecked ? 'text-cyan-400 font-bold' : 'text-slate-500'}>
-                                {r.code}
-                              </span>
-                            </label>
+                            <div key={cat} className="space-y-1">
+                              <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider block">{cat}</span>
+                              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                                {catRanks.map((r) => {
+                                  const isChecked = docSelectedRanks.includes(r.code);
+                                  return (
+                                    <label key={r.code} className="flex items-center space-x-2 text-xs font-mono cursor-pointer select-none bg-slate-900/60 px-2 py-1.5 rounded border border-slate-800">
+                                      <input
+                                        type="checkbox"
+                                        checked={isChecked}
+                                        onChange={() => handleToggleRankPermission(r.code)}
+                                        className="rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-0"
+                                      />
+                                      <span className={isChecked ? 'text-cyan-400 font-bold' : 'text-slate-400'}>
+                                        {r.code}
+                                      </span>
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            </div>
                           );
                         })}
                       </div>
@@ -792,7 +800,7 @@ export default function Dashboard() {
                       disabled={submittingDoc}
                       className="bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/50 text-cyan-300 text-xs font-mono px-5 py-2.5 rounded transition-all uppercase tracking-wider font-bold"
                     >
-                      {submittingDoc ? 'Publishing...' : 'Publish Document with Target Ranks'}
+                      {submittingDoc ? 'Publishing Link...' : 'Publish Document Link with Target Ranks'}
                     </button>
                   </form>
                 )}
@@ -801,14 +809,14 @@ export default function Dashboard() {
                   <div className="lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-lg overflow-hidden backdrop-blur-sm">
                     <div className="px-4 py-3 bg-slate-950/80 border-b border-slate-800 flex justify-between items-center">
                       <span className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider">
-                        Available Documents ({visibleDocuments.length})
+                        Available Document Links ({visibleDocuments.length})
                       </span>
                     </div>
 
                     <div className="divide-y divide-slate-800/60">
                       {visibleDocuments.length === 0 ? (
                         <div className="p-6 text-center text-xs font-mono text-slate-500 italic">
-                          No authorized documents available for your clearance level.
+                          No authorized document links available for your clearance level.
                         </div>
                       ) : (
                         visibleDocuments.map((doc) => {
@@ -841,7 +849,7 @@ export default function Dashboard() {
 
                   <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-4 font-mono space-y-4 backdrop-blur-sm self-start">
                     <h3 className="text-xs font-bold text-yellow-500 uppercase tracking-wider border-b border-slate-800 pb-2">
-                      Document Reader
+                      Document Access Link
                     </h3>
                     {selectedDocument ? (
                       <div className="space-y-3 text-xs">
@@ -850,14 +858,19 @@ export default function Dashboard() {
                           <span className="font-bold text-white text-sm">{selectedDocument.title}</span>
                         </div>
                         <div>
-                          <span className="text-[10px] text-slate-500 uppercase block">Author / HICOM</span>
+                          <span className="text-[10px] text-slate-500 uppercase block">Linked By (HICOM)</span>
                           <span className="text-cyan-400">{selectedDocument.created_by}</span>
                         </div>
                         <div>
-                          <span className="text-[10px] text-slate-500 uppercase block mb-1">Content</span>
-                          <div className="bg-slate-950 p-3 rounded border border-slate-800 text-slate-300 whitespace-pre-wrap leading-relaxed">
-                            {selectedDocument.content}
-                          </div>
+                          <span className="text-[10px] text-slate-500 uppercase block mb-1">External Link</span>
+                          <a
+                            href={selectedDocument.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block bg-cyan-950/60 hover:bg-cyan-900 border border-cyan-500/50 text-cyan-300 p-3 rounded text-center font-bold tracking-wider uppercase transition-all"
+                          >
+                            Open Secure Document ↗
+                          </a>
                         </div>
 
                         {userIsHicom && (
@@ -865,13 +878,13 @@ export default function Dashboard() {
                             onClick={() => handleRemoveDocument(selectedDocument)}
                             className="w-full bg-red-950/60 hover:bg-red-900 border border-red-600/50 text-red-400 text-[10px] font-mono px-3 py-2 rounded transition-all uppercase tracking-wider font-semibold mt-4"
                           >
-                            Delete Document
+                            Delete Document Link
                           </button>
                         )}
                       </div>
                     ) : (
                       <p className="text-xs text-slate-500 italic py-6 text-center">
-                        Select a document from the list to read its contents.
+                        Select a document from the list to open its link.
                       </p>
                     )}
                   </div>
