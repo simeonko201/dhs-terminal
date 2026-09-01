@@ -31,6 +31,35 @@ const isHicom = (rankCode) => {
   return ['O7', 'O8', 'O9', 'O10'].includes(rankCode);
 };
 
+// Funkcia na automatické určenie bezpečnostného clearance levelu a štýlu podľa hodnosti
+const getClearanceDetails = (rankCode) => {
+  if (['O10', 'O9', 'O8', 'O7'].includes(rankCode)) {
+    return {
+      levelText: 'LEVEL-5 SECURE NETWORK',
+      bannerBg: 'from-red-950/90 via-neutral-950 to-red-950/90',
+      borderColor: 'border-red-600/40',
+      textColor: 'text-red-400',
+      dotColor: 'bg-red-500',
+    };
+  } else if (['O6', 'O5', 'O4', 'O3', 'O2', 'O1'].includes(rankCode)) {
+    return {
+      levelText: 'LEVEL-3 CLASSIFIED OPERATIONS',
+      bannerBg: 'from-amber-950/90 via-neutral-950 to-amber-950/90',
+      borderColor: 'border-amber-600/40',
+      textColor: 'text-amber-400',
+      dotColor: 'bg-amber-500',
+    };
+  } else {
+    return {
+      levelText: 'LEVEL-1 STANDARD FIELD NETWORK',
+      bannerBg: 'from-cyan-950/90 via-neutral-950 to-cyan-950/90',
+      borderColor: 'border-cyan-600/40',
+      textColor: 'text-cyan-400',
+      dotColor: 'bg-cyan-500',
+    };
+  }
+};
+
 export default function Dashboard() {
   const [userProfile, setUserProfile] = useState(null);
   const [allUsers, setAllUsers] = useState([]);
@@ -330,6 +359,7 @@ export default function Dashboard() {
   }
 
   const userIsHicom = isHicom(userProfile?.code);
+  const clearance = getClearanceDetails(userProfile?.code);
 
   const visibleDocuments = documents.filter((doc) => {
     if (userIsHicom) return true;
@@ -354,11 +384,11 @@ export default function Dashboard() {
         ></div>
       </div>
 
-      {/* Top Classified Security Ticker Banner */}
-      <div className="bg-gradient-to-r from-red-950/90 via-neutral-950 to-red-950/90 border-b border-red-600/40 text-red-400 text-[10px] font-mono tracking-[0.3em] uppercase text-center py-2 z-10 shadow-[0_2px_10px_rgba(239,68,68,0.2)] flex items-center justify-center space-x-4">
-        <span className="inline-block w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
-        <span className="font-bold">RESTRICTED ACCESS // DEPARTMENT OF HOMELAND SECURITY // LEVEL-5 SECURE NETWORK</span>
-        <span className="inline-block w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+      {/* Top Classified Security Ticker Banner - Dynamicky menený podľa hodnosti používateľa */}
+      <div className={`bg-gradient-to-r ${clearance.bannerBg} border-b ${clearance.borderColor} ${clearance.textColor} text-[10px] font-mono tracking-[0.3em] uppercase text-center py-2 z-10 shadow-lg flex items-center justify-center space-x-4`}>
+        <span className={`inline-block w-2 h-2 ${clearance.dotColor} rounded-full animate-ping`}></span>
+        <span className="font-bold">RESTRICTED ACCESS // DEPARTMENT OF HOMELAND SECURITY // {clearance.levelText}</span>
+        <span className={`inline-block w-2 h-2 ${clearance.dotColor} rounded-full animate-ping`}></span>
       </div>
 
       {/* Header */}
@@ -454,7 +484,7 @@ export default function Dashboard() {
           <div className="bg-neutral-950/90 border border-neutral-800 p-4 rounded-xl space-y-2 shadow-inner">
             <div className="text-neutral-400 uppercase tracking-[0.2em] text-[9px] font-mono font-semibold">Security Clearance</div>
             <div className={`font-mono text-xs font-bold tracking-wider ${userIsHicom ? 'text-emerald-400' : 'text-amber-400'}`}>
-              {userIsHicom ? 'LEVEL 5 - HICOM' : 'LEVEL 2 - STANDARD'}
+              {userIsHicom ? 'LEVEL 5 - HICOM' : `LEVEL ${userProfile?.code?.startsWith('O') ? '3' : '1'} - STANDARD`}
             </div>
             <div className="text-[9px] font-mono text-cyan-500/80 pt-2 border-t border-neutral-900 tracking-wider">
               SECURE ENCRYPTION: ACTIVE 256-BIT
