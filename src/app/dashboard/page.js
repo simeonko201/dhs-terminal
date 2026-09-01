@@ -28,6 +28,11 @@ const RANKS = [
   { code: 'E2', name: 'Cadet', level: 2, category: 'LOW COMMAND' },
 ];
 
+// Helper to check if user is HICOM (O7, O8, O9, O10)
+const isHicom = (rankCode) => {
+  return ['O7', 'O8', 'O9', 'O10'].includes(rankCode);
+};
+
 export default function Dashboard() {
   const [userProfile, setUserProfile] = useState(null);
   const [allUsers, setAllUsers] = useState([]);
@@ -84,7 +89,6 @@ export default function Dashboard() {
 
     if (usersData) {
       setAllUsers(usersData);
-      // Keep selectedUser updated if data reloads
       if (selectedUser) {
         const updated = usersData.find((u) => u.id === selectedUser.id);
         if (updated) setSelectedUser(updated);
@@ -112,6 +116,7 @@ export default function Dashboard() {
 
   const handleAddPersonnel = async (e) => {
     e.preventDefault();
+    if (!userProfile || !isHicom(userProfile.code)) return;
     if (!newUsername) return;
 
     setSubmittingUser(true);
@@ -161,6 +166,7 @@ export default function Dashboard() {
   };
 
   const handleRemoveAgent = async (agent) => {
+    if (!userProfile || !isHicom(userProfile.code)) return;
     const confirmDelete = confirm(
       `Are you sure you want to terminate & remove agent "${agent.username}" [${agent.code}] from the DHS Roster?`
     );
@@ -190,6 +196,7 @@ export default function Dashboard() {
 
   const handleAddBlacklist = async (e) => {
     e.preventDefault();
+    if (!userProfile || !isHicom(userProfile.code)) return;
     if (!targetUsername || !blacklistReason) return;
 
     setSubmittingBlacklist(true);
@@ -218,6 +225,7 @@ export default function Dashboard() {
   };
 
   const handleRemoveBlacklist = async (item) => {
+    if (!userProfile || !isHicom(userProfile.code)) return;
     const confirmDelete = confirm(
       `Are you sure you want to remove "${item.roblox_username}" from the National Security Blacklist?`
     );
@@ -225,7 +233,14 @@ export default function Dashboard() {
     if (!confirmDelete) return;
 
     try {
-      const { error } = await supabase.from('blacklists').delete().eq('id', item.id);
+      let query = supabase.from('blacklists').delete();
+      if (item.id) {
+        query = query.eq('id', item.id);
+      } else {
+        query = query.eq('roblox_username', item.roblox_username);
+      }
+
+      const { error } = await query;
       if (error) throw error;
       await loadBlacklists();
     } catch (err) {
@@ -248,6 +263,8 @@ export default function Dashboard() {
       </div>
     );
   }
+
+  const userIsHicom = isHicom(userProfile?.code);
 
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-cyan-500 selection:text-black flex flex-col">
@@ -275,11 +292,11 @@ export default function Dashboard() {
             <div className="flex items-center justify-end space-x-2">
               <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               <p className="text-xs font-mono font-semibold text-cyan-400 uppercase">
-                {userProfile?.username || 'simeonko201'}
+                {userProfile?.username || 'User'}
               </p>
             </div>
             <p className="text-[10px] font-mono text-slate-400">
-              [{userProfile?.code || 'O10'}] {userProfile?.rank_name || 'Director'}
+              [{userProfile?.code || 'E2'}] {userProfile?.rank_name || 'Cadet'}
             </p>
           </div>
 
@@ -325,9 +342,9 @@ export default function Dashboard() {
           </div>
 
           <div className="bg-slate-950/80 border border-slate-800 p-3 rounded text-[11px] font-mono text-slate-400 space-y-1">
-            <div className="text-slate-500 uppercase tracking-wider text-[9px]">Logged In As</div>
-            <div className="text-cyan-400 font-bold">
-              {userProfile?.username || 'simeonko201'} [{userProfile?.code || 'O10'}]
+            <div className="text-slate-500 uppercase tracking-wider text-[9px]">Authorization Level</div>
+            <div className={userIsHicom ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold'}>
+              {userIsHicom ? 'HICOM (Full Access)' : 'Standard Access (View Only)'}
             </div>
           </div>
         </aside>
@@ -343,7 +360,7 @@ export default function Dashboard() {
                       PERSONNEL REGISTRATION
                     </h2>
                     <p className="text-xs font-mono text-slate-400 mt-0.5">
-                      Create Agent Accounts & Manage Hierarchy
+                      {userIsHicom ? 'Create Agent Accounts & Manage Hierarchy' : 'Secure Roster View'}
                     </p>
                   </div>
                   <div className="text-xs font-mono bg-cyan-950/50 border border-cyan-500/30 text-cyan-400 px-3 py-1.5 rounded">
@@ -351,50 +368,57 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <form onSubmit={handleAddPersonnel} className="bg-slate-900/80 border border-cyan-900/40 p-5 rounded-lg space-y-4 backdrop-blur-sm">
-                  <h3 className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-wider">
-                    + Register New Agent (Auto-Generate Password)
-                  </h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Roblox Username</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. AgentJohn"
-                        value={newUsername}
-                        onChange={(e) => setNewUsername(e.target.value)}
-                        required
-                        className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
-                      />
+                {/* HICOM Only Creation Form */}
+                {userIsHicom ? (
+                  <form onSubmit={handleAddPersonnel} className="bg-slate-900/80 border border-cyan-900/40 p-5 rounded-lg space-y-4 backdrop-blur-sm">
+                    <h3 className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-wider">
+                      + Register New Agent (Auto-Generate Password)
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Roblox Username</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. AgentJohn"
+                          value={newUsername}
+                          onChange={(e) => setNewUsername(e.target.value)}
+                          required
+                          className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Assigned Rank</label>
+                        <select
+                          value={selectedRankCode}
+                          onChange={(e) => setSelectedRankCode(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
+                        >
+                          {RANKS.map((r) => (
+                            <option key={r.code} value={r.code}>
+                              [{r.code}] {r.name} ({r.category})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
 
-                    <div>
-                      <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Assigned Rank</label>
-                      <select
-                        value={selectedRankCode}
-                        onChange={(e) => setSelectedRankCode(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
-                      >
-                        {RANKS.map((r) => (
-                          <option key={r.code} value={r.code}>
-                            [{r.code}] {r.name} ({r.category})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <button
+                      type="submit"
+                      disabled={submittingUser}
+                      className="bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/50 text-cyan-300 text-xs font-mono px-5 py-2.5 rounded transition-all uppercase tracking-wider font-bold"
+                    >
+                      {submittingUser ? 'Generating Access...' : 'Generate Password & Register Agent'}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="bg-amber-950/20 border border-amber-500/30 p-4 rounded text-xs font-mono text-amber-400">
+                    🔒 Personnel registration is restricted to High Command (O7-O10). Your rank level permits viewing only.
                   </div>
+                )}
 
-                  <button
-                    type="submit"
-                    disabled={submittingUser}
-                    className="bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/50 text-cyan-300 text-xs font-mono px-5 py-2.5 rounded transition-all uppercase tracking-wider font-bold"
-                  >
-                    {submittingUser ? 'Generating Access...' : 'Generate Password & Register Agent'}
-                  </button>
-                </form>
-
-                {generatedCredentials && (
+                {generatedCredentials && userIsHicom && (
                   <div className="bg-emerald-950/40 border border-emerald-500/50 p-4 rounded-lg space-y-2 font-mono text-xs">
                     <p className="text-emerald-400 font-bold uppercase tracking-wider">
                       ✓ ACCOUNT SUCCESSFULLY CREATED
@@ -407,14 +431,11 @@ export default function Dashboard() {
                   </div>
                 )}
 
-                {/* Main Content Layout: Table + Inspector Details View */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  
-                  {/* Roster Table (2 cols width) */}
                   <div className="lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-lg overflow-hidden backdrop-blur-sm">
                     <div className="px-4 py-3 bg-slate-950/80 border-b border-slate-800 flex justify-between items-center">
                       <span className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider">
-                        Chain of Command (Click Row to Inspect)
+                        Chain of Command {userIsHicom ? '(Click Row to Inspect)' : ''}
                       </span>
                     </div>
 
@@ -423,7 +444,7 @@ export default function Dashboard() {
                         <tr>
                           <th className="px-4 py-3">Agent</th>
                           <th className="px-4 py-3">Rank Code</th>
-                          <th className="px-4 py-3 text-right">Action</th>
+                          {userIsHicom && <th className="px-4 py-3 text-right">Action</th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-800/60 text-slate-300">
@@ -433,11 +454,13 @@ export default function Dashboard() {
                             <tr 
                               key={u.id || u.username} 
                               onClick={() => {
-                                setSelectedUser(u);
-                                setShowPassword(false);
+                                if (userIsHicom) {
+                                  setSelectedUser(u);
+                                  setShowPassword(false);
+                                }
                               }}
-                              className={`cursor-pointer transition-colors ${
-                                isSelected ? 'bg-cyan-950/40 border-l-2 border-cyan-400' : 'hover:bg-cyan-950/20'
+                              className={`transition-colors ${userIsHicom ? 'cursor-pointer' : ''} ${
+                                isSelected ? 'bg-cyan-950/40 border-l-2 border-cyan-400' : userIsHicom ? 'hover:bg-cyan-950/20' : ''
                               } ${u.rank >= 13 ? 'font-bold' : ''}`}
                             >
                               <td className="px-4 py-3 text-cyan-400">
@@ -449,17 +472,19 @@ export default function Dashboard() {
                                   {u.code}
                                 </span>
                               </td>
-                              <td className="px-4 py-3 text-right">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleRemoveAgent(u);
-                                  }}
-                                  className="bg-red-950/60 hover:bg-red-900 border border-red-600/50 text-red-400 text-[10px] font-mono px-2.5 py-1 rounded transition-all uppercase tracking-wider font-semibold"
-                                >
-                                  Remove
-                                </button>
-                              </td>
+                              {userIsHicom && (
+                                <td className="px-4 py-3 text-right">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRemoveAgent(u);
+                                    }}
+                                    className="bg-red-950/60 hover:bg-red-900 border border-red-600/50 text-red-400 text-[10px] font-mono px-2.5 py-1 rounded transition-all uppercase tracking-wider font-semibold"
+                                  >
+                                    Remove
+                                  </button>
+                                </td>
+                              )}
                             </tr>
                           );
                         })}
@@ -467,45 +492,44 @@ export default function Dashboard() {
                     </table>
                   </div>
 
-                  {/* Inspector Panel for Selected User & Password Reveal */}
-                  <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-4 font-mono space-y-4 backdrop-blur-sm self-start">
-                    <h3 className="text-xs font-bold text-yellow-500 uppercase tracking-wider border-b border-slate-800 pb-2">
-                      Personnel Credentials Inspector
-                    </h3>
-                    {selectedUser ? (
-                      <div className="space-y-3 text-xs">
-                        <div>
-                          <span className="text-[10px] text-slate-500 uppercase block">Username</span>
-                          <span className="font-bold text-white text-sm">{selectedUser.username}</span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] text-slate-500 uppercase block">Badge Designation</span>
-                          <span className="text-cyan-400">[{selectedUser.code}] {selectedUser.rank_name}</span>
-                        </div>
-                        <div className="pt-2 border-t border-slate-800">
-                          <span className="text-[10px] text-slate-500 uppercase block mb-1">Account Password</span>
-                          <div className="flex items-center justify-between bg-slate-950 p-2 rounded border border-slate-800">
-                            <span className="tracking-widest text-yellow-400 font-bold">
-                              {showPassword ? (selectedUser.password || 'No Password Stored') : '••••••••'}
-                            </span>
-                            <button
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] px-2 py-1 rounded uppercase tracking-wider"
-                            >
-                              {showPassword ? 'Hide' : 'Reveal'}
-                            </button>
+                  {/* Inspector Panel (Hicom only) */}
+                  {userIsHicom && (
+                    <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-4 font-mono space-y-4 backdrop-blur-sm self-start">
+                      <h3 className="text-xs font-bold text-yellow-500 uppercase tracking-wider border-b border-slate-800 pb-2">
+                        Personnel Credentials Inspector
+                      </h3>
+                      {selectedUser ? (
+                        <div className="space-y-3 text-xs">
+                          <div>
+                            <span className="text-[10px] text-slate-500 uppercase block">Username</span>
+                            <span className="font-bold text-white text-sm">{selectedUser.username}</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-500 uppercase block">Badge Designation</span>
+                            <span className="text-cyan-400">[{selectedUser.code}] {selectedUser.rank_name}</span>
+                          </div>
+                          <div className="pt-2 border-t border-slate-800">
+                            <span className="text-[10px] text-slate-500 uppercase block mb-1">Account Password</span>
+                            <div className="flex items-center justify-between bg-slate-950 p-2 rounded border border-slate-800">
+                              <span className="tracking-widest text-yellow-400 font-bold">
+                                {showPassword ? (selectedUser.password || 'No Password Stored') : '••••••••'}
+                              </span>
+                              <button
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] px-2 py-1 rounded uppercase tracking-wider"
+                              >
+                                {showPassword ? 'Hide' : 'Reveal'}
+                              </button>
+                            </div>
                           </div>
                         </div>
-                        <p className="text-[10px] text-slate-500 italic pt-2">
-                          * Share this password securely with the user if they forgot it.
+                      ) : (
+                        <p className="text-xs text-slate-500 italic py-6 text-center">
+                          Click on any agent row in the table to view their secure credentials.
                         </p>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-slate-500 italic py-6 text-center">
-                        Click on any agent row in the table to view their secure credentials and details.
-                      </p>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
 
                 </div>
               </div>
@@ -518,58 +542,65 @@ export default function Dashboard() {
                     DEPARTMENT OF HOMELAND SECURITY BLACKLIST
                   </h2>
                   <p className="text-xs font-mono text-slate-400 mt-0.5">
-                    Restricted Individuals
+                    {userIsHicom ? 'Manage Restricted Individuals' : 'National Security Watchlist (View Only)'}
                   </p>
                 </div>
 
-                <form onSubmit={handleAddBlacklist} className="bg-slate-900/80 border border-red-900/40 p-4 rounded-lg space-y-4 backdrop-blur-sm">
-                  <h3 className="text-xs font-mono font-bold text-red-400 uppercase tracking-wider">
-                    + Log New Blacklist Entry
-                  </h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <input
-                      type="text"
-                      placeholder="Roblox Username"
-                      value={targetUsername}
-                      onChange={(e) => setTargetUsername(e.target.value)}
+                {/* HICOM Only Blacklist Creation Form */}
+                {userIsHicom ? (
+                  <form onSubmit={handleAddBlacklist} className="bg-slate-900/80 border border-red-900/40 p-4 rounded-lg space-y-4 backdrop-blur-sm">
+                    <h3 className="text-xs font-mono font-bold text-red-400 uppercase tracking-wider">
+                      + Log New Blacklist Entry
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <input
+                        type="text"
+                        placeholder="Roblox Username"
+                        value={targetUsername}
+                        onChange={(e) => setTargetUsername(e.target.value)}
+                        required
+                        className="bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-red-500"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Roblox ID (Optional)"
+                        value={targetRobloxId}
+                        onChange={(e) => setTargetRobloxId(e.target.value)}
+                        className="bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-red-500"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Duration (e.g. Permanent)"
+                        value={blacklistDuration}
+                        onChange={(e) => setBlacklistDuration(e.target.value)}
+                        required
+                        className="bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-red-500"
+                      />
+                    </div>
+
+                    <textarea
+                      placeholder="Reason for Blacklist..."
+                      value={blacklistReason}
+                      onChange={(e) => setBlacklistReason(e.target.value)}
                       required
-                      className="bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-red-500"
+                      rows={2}
+                      className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-red-500"
                     />
-                    <input
-                      type="text"
-                      placeholder="Roblox ID (Optional)"
-                      value={targetRobloxId}
-                      onChange={(e) => setTargetRobloxId(e.target.value)}
-                      className="bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-red-500"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Duration (e.g. Permanent)"
-                      value={blacklistDuration}
-                      onChange={(e) => setBlacklistDuration(e.target.value)}
-                      required
-                      className="bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-red-500"
-                    />
+
+                    <button
+                      type="submit"
+                      disabled={submittingBlacklist}
+                      className="bg-red-950 hover:bg-red-900 border border-red-500/50 text-red-300 text-xs font-mono px-4 py-2 rounded transition-all uppercase tracking-wider"
+                    >
+                      {submittingBlacklist ? 'Filing Entry...' : 'Submit Blacklist Entry'}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="bg-amber-950/20 border border-amber-500/30 p-4 rounded text-xs font-mono text-amber-400">
+                    🔒 Blacklist modifications are restricted to High Command (O7-O10). You have viewing rights only.
                   </div>
-
-                  <textarea
-                    placeholder="Reason for Blacklist..."
-                    value={blacklistReason}
-                    onChange={(e) => setBlacklistReason(e.target.value)}
-                    required
-                    rows={2}
-                    className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-red-500"
-                  />
-
-                  <button
-                    type="submit"
-                    disabled={submittingBlacklist}
-                    className="bg-red-950 hover:bg-red-900 border border-red-500/50 text-red-300 text-xs font-mono px-4 py-2 rounded transition-all uppercase tracking-wider"
-                  >
-                    {submittingBlacklist ? 'Filing Entry...' : 'Submit Blacklist Entry'}
-                  </button>
-                </form>
+                )}
 
                 <div className="bg-slate-900/60 border border-slate-800 rounded-lg overflow-hidden backdrop-blur-sm">
                   <table className="w-full text-left text-xs font-mono">
@@ -580,7 +611,7 @@ export default function Dashboard() {
                         <th className="px-4 py-3">Duration</th>
                         <th className="px-4 py-3">Reason</th>
                         <th className="px-4 py-3">Issued By</th>
-                        <th className="px-4 py-3 text-right">Action</th>
+                        {userIsHicom && <th className="px-4 py-3 text-right">Action</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/60 text-slate-300">
@@ -591,14 +622,16 @@ export default function Dashboard() {
                           <td className="px-4 py-3 text-yellow-400 font-bold">{item.duration || 'Permanent'}</td>
                           <td className="px-4 py-3 text-slate-200">{item.reason}</td>
                           <td className="px-4 py-3 font-mono text-cyan-400">{item.blacklisted_by}</td>
-                          <td className="px-4 py-3 text-right">
-                            <button
-                              onClick={() => handleRemoveBlacklist(item)}
-                              className="bg-red-950/60 hover:bg-red-900 border border-red-600/50 text-red-400 text-[10px] font-mono px-2.5 py-1 rounded transition-all uppercase tracking-wider font-semibold"
-                            >
-                              Remove
-                            </button>
-                          </td>
+                          {userIsHicom && (
+                            <td className="px-4 py-3 text-right">
+                              <button
+                                onClick={() => handleRemoveBlacklist(item)}
+                                className="bg-red-950/60 hover:bg-red-900 border border-red-600/50 text-red-400 text-[10px] font-mono px-2.5 py-1 rounded transition-all uppercase tracking-wider font-semibold"
+                              >
+                                Remove
+                              </button>
+                            </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
