@@ -64,7 +64,7 @@ export default function Dashboard() {
   const [allUsers, setAllUsers] = useState([]);
   const [blacklists, setBlacklists] = useState([]);
   const [documents, setDocuments] = useState([]);
-  const [incidentReports, setIncidentReports] = useState([]);
+  const [arrestLogs, setArrestLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('personnel');
 
@@ -85,13 +85,11 @@ export default function Dashboard() {
   const [submittingDoc, setSubmittingDoc] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState(null);
 
-  // New state for Incident Reports / Arrest Log
-  const [incidentTitle, setIncidentTitle] = useState('');
-  const [suspectName, setSuspectName] = useState('');
-  const [arrestCharges, setArrestCharges] = useState('');
-  const [incidentDescription, setIncidentDescription] = useState('');
-  const [submittingIncident, setSubmittingIncident] = useState(false);
-  const [selectedIncident, setSelectedIncident] = useState(null);
+  // Arrest Log state
+  const [arrestUsername, setArrestUsername] = useState('');
+  const [arrestReason, setArrestReason] = useState('');
+  const [arrestTimeInSeconds, setArrestTimeInSeconds] = useState('');
+  const [submittingArrest, setSubmittingArrest] = useState(false);
 
   const [selectedUser, setSelectedUser] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -117,7 +115,7 @@ export default function Dashboard() {
       await loadPersonnel();
       await loadBlacklists();
       await loadDocuments();
-      await loadIncidentReports();
+      await loadArrestLogs();
       setLoading(false);
     }
 
@@ -157,13 +155,13 @@ export default function Dashboard() {
     if (docData) setDocuments(docData);
   };
 
-  const loadIncidentReports = async () => {
-    const { data: incidentData } = await supabase
-      .from('incident_reports')
+  const loadArrestLogs = async () => {
+    const { data: arrestData } = await supabase
+      .from('arrest_logs')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (incidentData) setIncidentReports(incidentData);
+    if (arrestData) setArrestLogs(arrestData);
   };
 
   const generatePassword = () => {
@@ -360,53 +358,43 @@ export default function Dashboard() {
     }
   };
 
-  const handleCreateIncident = async (e) => {
+  const handleCreateArrestLog = async (e) => {
     e.preventDefault();
-    if (!userProfile || !incidentTitle || !suspectName || !arrestCharges) return;
+    if (!userProfile || !arrestUsername || !arrestReason || !arrestTimeInSeconds) return;
 
-    setSubmittingIncident(true);
+    setSubmittingArrest(true);
 
-    const newIncident = {
-      title: incidentTitle,
-      suspect_name: suspectName,
-      charges: arrestCharges,
-      description: incidentDescription || 'No description provided.',
-      officer_name: userProfile?.username || 'Unknown Agent',
+    const newLog = {
+      username: arrestUsername,
+      reason: arrestReason,
+      time_in_seconds: parseInt(arrestTimeInSeconds, 10) || 0,
     };
 
-    const { error } = await supabase.from('incident_reports').insert([newIncident]);
+    const { error } = await supabase.from('arrest_logs').insert([newLog]);
 
     if (!error) {
-      setIncidentTitle('');
-      setSuspectName('');
-      setArrestCharges('');
-      setIncidentDescription('');
-      await loadIncidentReports();
+      setArrestUsername('');
+      setArrestReason('');
+      setArrestTimeInSeconds('');
+      await loadArrestLogs();
     } else {
-      alert('Error logging incident report: ' + error.message);
+      alert('Error logging arrest: ' + error.message);
     }
 
-    setSubmittingIncident(false);
+    setSubmittingArrest(false);
   };
 
-  const handleRemoveIncident = async (incident) => {
+  const handleRemoveArrestLog = async (log) => {
     if (!userProfile) return;
-    const canDelete = userIsHicom || incident.officer_name === userProfile.username;
-    if (!canDelete) {
-      alert('You do not have permission to delete this report.');
-      return;
-    }
-
-    const confirmDelete = confirm(`Are you sure you want to delete incident report "${incident.title}"?`);
+    const confirmDelete = confirm(`Are you sure you want to delete this arrest log?`);
     if (!confirmDelete) return;
 
     try {
-      const { error } = await supabase.from('incident_reports').delete().eq('id', incident.id);
+      const { error } = await supabase.from('arrest_logs').delete().eq('id', log.id);
       if (error) throw error;
-      if (selectedIncident?.id === incident.id) setSelectedIncident(null);
-      await loadIncidentReports();
+      await loadArrestLogs();
     } catch (err) {
-      alert('Error removing incident report: ' + err.message);
+      alert('Error removing arrest log: ' + err.message);
     }
   };
 
@@ -437,7 +425,7 @@ export default function Dashboard() {
   return (
     <div className="relative min-h-screen bg-[#07090e] text-neutral-100 font-sans selection:bg-cyan-500 selection:text-black flex flex-col overflow-x-hidden">
       
-      {/* Enhanced Pro Homeland Security Background with Grid Lines & Fully Visible Watermark */}
+      {/* Background & Watermark */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden flex items-center justify-center pt-16">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f293d10_1px,transparent_1px),linear-gradient(to_bottom,#1f293d10_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
         <div className="absolute inset-0 bg-radial from-cyan-950/20 via-transparent to-[#05070a] opacity-90"></div>
@@ -447,7 +435,7 @@ export default function Dashboard() {
         ></div>
       </div>
 
-      {/* Top Classified Security Ticker Banner */}
+      {/* Top Banner */}
       <div className={`bg-gradient-to-r ${clearance.bannerBg} border-b ${clearance.borderColor} ${clearance.textColor} text-[10px] font-mono tracking-[0.3em] uppercase text-center py-2 z-10 shadow-lg flex items-center justify-center space-x-4`}>
         <span className={`inline-block w-2 h-2 ${clearance.dotColor} rounded-full animate-ping`}></span>
         <span className="font-bold">RESTRICTED ACCESS // DEPARTMENT OF HOMELAND SECURITY // {clearance.levelText}</span>
@@ -532,15 +520,15 @@ export default function Dashboard() {
             </button>
 
             <button
-              onClick={() => setActiveTab('incidents')}
+              onClick={() => setActiveTab('arrest_logs')}
               className={`w-full text-left px-4 py-3 rounded-lg text-xs font-mono flex items-center space-x-3 transition-all ${
-                activeTab === 'incidents'
+                activeTab === 'arrest_logs'
                   ? 'bg-cyan-950/80 border-l-4 border-cyan-400 text-cyan-200 font-bold shadow-[0_0_15px_rgba(6,182,212,0.2)]'
                   : 'text-neutral-400 hover:bg-neutral-800/50 hover:text-neutral-200'
               }`}
             >
               <span className="text-cyan-400 text-xs">■</span>
-              <span className="tracking-wider">ARREST LOGS ({incidentReports.length})</span>
+              <span className="tracking-wider">ARREST LOGS ({arrestLogs.length})</span>
             </button>
 
             <button
@@ -722,22 +710,22 @@ export default function Dashboard() {
                       {selectedUser ? (
                         <div className="space-y-4 text-xs">
                           <div>
-                            <span className="text-[10px] text-neutral-500 uppercase tracking-widest block font-semibold">Agent Name</span>
-                            <span className="font-bold text-white text-sm">{selectedUser.username}</span>
+                            <span className="text-neutral-500 uppercase text-[10px] block">Selected Agent</span>
+                            <span className="text-cyan-300 font-bold">{selectedUser.username}</span>
                           </div>
                           <div>
-                            <span className="text-[10px] text-neutral-500 uppercase tracking-widest block font-semibold">Designation</span>
-                            <span className="text-cyan-400 font-semibold">[{selectedUser.code}] {selectedUser.rank_name}</span>
+                            <span className="text-neutral-500 uppercase text-[10px] block">Rank & Assignment</span>
+                            <span className="text-neutral-300">[{selectedUser.code}] {selectedUser.rank_name}</span>
                           </div>
-                          <div className="pt-3 border-t border-neutral-800">
-                            <span className="text-[10px] text-neutral-500 uppercase tracking-widest block mb-1.5 font-semibold">Encrypted Password</span>
-                            <div className="flex items-center justify-between bg-neutral-950 p-3 rounded-lg border border-neutral-800">
-                              <span className="tracking-widest text-yellow-400 font-bold">
-                                {showPassword ? (selectedUser.password || 'No Password Stored') : '••••••••'}
+                          <div>
+                            <span className="text-neutral-500 uppercase text-[10px] block">Stored Password</span>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <span className="bg-neutral-950 px-3 py-1.5 rounded border border-neutral-800 text-yellow-400 font-mono select-all">
+                                {showPassword ? selectedUser.password : '••••••••'}
                               </span>
                               <button
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[10px] px-3 py-1 rounded uppercase tracking-wider font-semibold"
+                                className="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 px-2.5 py-1.5 rounded text-[10px]"
                               >
                                 {showPassword ? 'Hide' : 'Reveal'}
                               </button>
@@ -745,9 +733,7 @@ export default function Dashboard() {
                           </div>
                         </div>
                       ) : (
-                        <p className="text-xs text-neutral-500 italic py-10 text-center">
-                          Select an agent from the roster list to inspect secure clearance credentials.
-                        </p>
+                        <p className="text-neutral-500 text-xs italic">Select an agent row from the personnel roster to inspect their credentials.</p>
                       )}
                     </div>
                   )}
@@ -758,113 +744,108 @@ export default function Dashboard() {
             {/* BLACKLISTS TAB */}
             {activeTab === 'blacklists' && (
               <div className="space-y-6">
-                <div className="border-b border-neutral-800 pb-4">
-                  <h2 className="text-base font-mono font-bold text-neutral-100 tracking-widest uppercase flex items-center space-x-2">
-                    <span className="text-red-500">❖</span>
-                    <span>BLACKLISTS</span>
-                  </h2>
-                  <p className="text-xs font-mono text-neutral-400 mt-1">
-                    {userIsHicom ? 'Manage Agency Threat List & Watchlist' : 'Watchlist Registry (View Only)'}
-                  </p>
+                <div className="border-b border-neutral-800 pb-4 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-base font-mono font-bold text-neutral-100 tracking-widest uppercase flex items-center space-x-2">
+                      <span className="text-red-500">❖</span>
+                      <span>DEPARTMENT BLACKLIST DATABASE</span>
+                    </h2>
+                    <p className="text-xs font-mono text-neutral-400 mt-1">
+                      Restricted personnel and external threat monitoring
+                    </p>
+                  </div>
+                  <div className="text-xs font-mono bg-red-950/60 border border-red-500/40 text-red-300 px-3.5 py-1.5 rounded-lg tracking-wider shadow-sm font-semibold">
+                    TOTAL BLACKLISTED: {blacklists.length}
+                  </div>
                 </div>
 
-                {userIsHicom && (
-                  <form onSubmit={handleAddBlacklist} className="bg-neutral-900/80 backdrop-blur-xl border border-red-950/50 p-6 rounded-xl space-y-4 shadow-2xl">
+                {userIsHicom ? (
+                  <form onSubmit={handleAddBlacklist} className="bg-neutral-900/80 backdrop-blur-xl border border-red-900/50 p-6 rounded-xl space-y-4 shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
                     <h3 className="text-xs font-mono font-bold text-red-400 uppercase tracking-[0.2em] flex items-center space-x-2">
-                      <span>[+] ADD SUBJECT TO BLACKLIST</span>
+                      <span>[+] ADD ENTITY TO BLACKLIST</span>
                     </h3>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <div>
-                        <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1 font-semibold">Roblox Username</label>
+                        <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1.5 font-semibold">Roblox Username</label>
                         <input
                           type="text"
-                          placeholder="e.g. BadActor123"
+                          placeholder="e.g. BadUser123"
                           value={targetUsername}
                           onChange={(e) => setTargetUsername(e.target.value)}
                           required
-                          className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-red-500"
+                          className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-red-500 shadow-inner"
                         />
                       </div>
+
                       <div>
-                        <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1 font-semibold">Roblox ID (Optional)</label>
+                        <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1.5 font-semibold">Roblox ID (Optional)</label>
                         <input
                           type="text"
                           placeholder="e.g. 12345678"
                           value={targetRobloxId}
                           onChange={(e) => setTargetRobloxId(e.target.value)}
-                          className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-red-500"
+                          className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-red-500 shadow-inner"
                         />
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1 font-semibold">Reason for Blacklist</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. Exploiting / Raid Interference"
-                          value={blacklistReason}
-                          onChange={(e) => setBlacklistReason(e.target.value)}
-                          required
-                          className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-red-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1 font-semibold">Duration</label>
-                        <select
-                          value={blacklistDuration}
-                          onChange={(e) => setBlacklistDuration(e.target.value)}
-                          className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-red-500"
-                        >
-                          <option value="Permanent">Permanent</option>
-                          <option value="30 Days">30 Days</option>
-                          <option value="90 Days">90 Days</option>
-                        </select>
-                      </div>
+                    <div>
+                      <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1.5 font-semibold">Reason for Blacklist</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Exploiting / Trolling / Treason"
+                        value={blacklistReason}
+                        onChange={(e) => setBlacklistReason(e.target.value)}
+                        required
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-red-500 shadow-inner"
+                      />
                     </div>
 
                     <button
                       type="submit"
                       disabled={submittingBlacklist}
-                      className="bg-red-950 hover:bg-red-900 border border-red-500/60 text-red-200 text-xs font-mono px-6 py-3 rounded-lg transition-all uppercase tracking-widest font-bold shadow-md"
+                      className="bg-red-950 hover:bg-red-900 border border-red-500/60 text-red-200 text-xs font-mono px-6 py-3 rounded-lg transition-all uppercase tracking-widest font-bold shadow-[0_0_15px_rgba(239,68,68,0.3)]"
                     >
-                      {submittingBlacklist ? 'Transmitting Threat Data...' : 'Submit to Blacklist Registry'}
+                      {submittingBlacklist ? 'Processing...' : 'Confirm & Add to Blacklist'}
                     </button>
                   </form>
+                ) : (
+                  <div className="bg-amber-950/30 border border-amber-500/40 p-4 rounded-xl text-xs font-mono text-amber-300 flex items-center space-x-3 shadow-md">
+                    <span>⚠️</span>
+                    <span>Blacklist management is restricted to High Command (O7-O10).</span>
+                  </div>
                 )}
 
                 <div className="bg-neutral-900/60 border border-neutral-800 rounded-xl overflow-hidden backdrop-blur-xl shadow-2xl">
                   <div className="px-5 py-3.5 bg-neutral-950/90 border-b border-neutral-800 flex justify-between items-center">
                     <span className="text-xs font-mono font-bold text-neutral-300 uppercase tracking-widest">
-                      Active Threat Registry ({blacklists.length})
+                      Active Blacklist Registry
                     </span>
                   </div>
 
                   <table className="w-full text-left text-xs font-mono">
                     <thead className="bg-neutral-950/80 text-neutral-400 uppercase tracking-[0.15em] border-b border-neutral-800">
                       <tr>
-                        <th className="px-5 py-3.5">Subject</th>
+                        <th className="px-5 py-3.5">Entity</th>
                         <th className="px-5 py-3.5">Reason</th>
-                        <th className="px-5 py-3.5">Duration</th>
-                        <th className="px-5 py-3.5">Logged By</th>
+                        <th className="px-5 py-3.5">Added By</th>
                         {userIsHicom && <th className="px-5 py-3.5 text-right">Action</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-800/60 text-neutral-300">
-                      {blacklists.map((item) => (
-                        <tr key={item.id || item.roblox_username} className="hover:bg-red-950/10 transition-colors">
-                          <td className="px-5 py-3.5">
-                            <div className="font-bold text-red-400">{item.roblox_username}</div>
-                            <div className="text-[10px] text-neutral-500">ID: {item.roblox_id}</div>
+                      {blacklists.map((b) => (
+                        <tr key={b.id || b.roblox_username} className="hover:bg-red-950/10 transition-colors">
+                          <td className="px-5 py-3.5 text-red-400 font-bold">
+                            <div>{b.roblox_username}</div>
+                            <div className="text-[10px] text-neutral-500">ID: {b.roblox_id}</div>
                           </td>
-                          <td className="px-5 py-3.5 text-neutral-300">{item.reason}</td>
-                          <td className="px-5 py-3.5 text-yellow-400 font-semibold">{item.duration}</td>
-                          <td className="px-5 py-3.5 text-neutral-400">{item.blacklisted_by}</td>
+                          <td className="px-5 py-3.5">{b.reason}</td>
+                          <td className="px-5 py-3.5 text-neutral-400">{b.blacklisted_by}</td>
                           {userIsHicom && (
                             <td className="px-5 py-3.5 text-right">
                               <button
-                                onClick={() => handleRemoveBlacklist(item)}
+                                onClick={() => handleRemoveBlacklist(b)}
                                 className="bg-red-950/60 hover:bg-red-900 border border-red-600/50 text-red-300 text-[10px] font-mono px-3.5 py-1 rounded-md transition-all uppercase tracking-wider font-semibold shadow-sm"
                               >
                                 Revoke
@@ -873,199 +854,127 @@ export default function Dashboard() {
                           )}
                         </tr>
                       ))}
-                      {blacklists.length === 0 && (
-                        <tr>
-                          <td colSpan={userIsHicom ? 5 : 4} className="text-center py-10 text-neutral-500 italic">
-                            No active blacklists found in registry.
-                          </td>
-                        </tr>
-                      )}
                     </tbody>
                   </table>
                 </div>
               </div>
             )}
 
-            {/* INCIDENT REPORTS / ARREST LOG TAB */}
-            {activeTab === 'incidents' && (
+            {/* ARREST LOGS TAB */}
+            {activeTab === 'arrest_logs' && (
               <div className="space-y-6">
                 <div className="border-b border-neutral-800 pb-4 flex items-center justify-between">
                   <div>
                     <h2 className="text-base font-mono font-bold text-neutral-100 tracking-widest uppercase flex items-center space-x-2">
                       <span className="text-cyan-400">❖</span>
-                      <span>ARREST LOG</span>
+                      <span>ARREST LOGS DATABASE</span>
                     </h2>
                     <p className="text-xs font-mono text-neutral-400 mt-1">
-                      Log criminal bookings, suspect apprehensions, and official operational field reports
+                      Log and review department arrest records
                     </p>
                   </div>
                   <div className="text-xs font-mono bg-cyan-950/60 border border-cyan-500/40 text-cyan-300 px-3.5 py-1.5 rounded-lg tracking-wider shadow-sm font-semibold">
-                    TOTAL LOGS: {incidentReports.length}
+                    TOTAL ARRESTS: {arrestLogs.length}
                   </div>
                 </div>
 
-                <form onSubmit={handleCreateIncident} className="bg-neutral-900/80 backdrop-blur-xl border border-cyan-900/50 p-6 rounded-xl space-y-4 shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
+                <form onSubmit={handleCreateArrestLog} className="bg-neutral-900/80 backdrop-blur-xl border border-cyan-900/50 p-6 rounded-xl space-y-4 shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
                   <h3 className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-[0.2em] flex items-center space-x-2">
-                    <span>[+] FILE NEW INCIDENT / ARREST REPORT</span>
+                    <span>[+] LOG NEW ARREST</span>
                   </h3>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                     <div>
-                      <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1 font-semibold">Incident Title / Case Name</label>
+                      <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1.5 font-semibold">Username</label>
                       <input
                         type="text"
-                        placeholder=""
-                        value={incidentTitle}
-                        onChange={(e) => setIncidentTitle(e.target.value)}
+                        placeholder="Suspect Username"
+                        value={arrestUsername}
+                        onChange={(e) => setArrestUsername(e.target.value)}
                         required
-                        className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan-400"
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan-400 shadow-inner"
                       />
                     </div>
-                    <div>
-                      <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1 font-semibold">Suspect / Offender Username</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. simeonko201"
-                        value={suspectName}
-                        onChange={(e) => setSuspectName(e.target.value)}
-                        required
-                        className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1 font-semibold">Arrest Charges</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Trespassing, Resisting Arrest"
-                        value={arrestCharges}
-                        onChange={(e) => setArrestCharges(e.target.value)}
-                        required
-                        className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan-400"
-                      />
-                    </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1 font-semibold">Detailed Incident Narrative</label>
-                    <textarea
-                      placeholder="Enter detailed description of events, evidence collected, and outcome..."
-                      value={incidentDescription}
-                      onChange={(e) => setIncidentDescription(e.target.value)}
-                      rows={3}
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan-400"
-                    />
+                    <div>
+                      <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1.5 font-semibold">Reason</label>
+                      <input
+                        type="text"
+                        placeholder="Reason for arrest"
+                        value={arrestReason}
+                        onChange={(e) => setArrestReason(e.target.value)}
+                        required
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan-400 shadow-inner"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1.5 font-semibold">Time of Arrest (Seconds)</label>
+                      <input
+                        type="number"
+                        placeholder="e.g. 300"
+                        value={arrestTimeInSeconds}
+                        onChange={(e) => setArrestTimeInSeconds(e.target.value)}
+                        required
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan-400 shadow-inner"
+                      />
+                    </div>
                   </div>
 
                   <button
                     type="submit"
-                    disabled={submittingIncident}
+                    disabled={submittingArrest}
                     className="bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/60 text-cyan-200 text-xs font-mono px-6 py-3 rounded-lg transition-all uppercase tracking-widest font-bold shadow-[0_0_15px_rgba(6,182,212,0.3)]"
                   >
-                    {submittingIncident ? 'Encrypting & Filing Report...' : 'File Incident Report'}
+                    {submittingArrest ? 'Logging Arrest...' : 'Submit Arrest Log'}
                   </button>
                 </form>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="lg:col-span-2 bg-neutral-900/60 border border-neutral-800 rounded-xl overflow-hidden backdrop-blur-xl shadow-2xl">
-                    <div className="px-5 py-3.5 bg-neutral-950/90 border-b border-neutral-800 flex justify-between items-center">
-                      <span className="text-xs font-mono font-bold text-neutral-300 uppercase tracking-widest">
-                        Filed Reports Log (Select Row to Inspect)
-                      </span>
-                    </div>
+                <div className="bg-neutral-900/60 border border-neutral-800 rounded-xl overflow-hidden backdrop-blur-xl shadow-2xl">
+                  <div className="px-5 py-3.5 bg-neutral-950/90 border-b border-neutral-800 flex justify-between items-center">
+                    <span className="text-xs font-mono font-bold text-neutral-300 uppercase tracking-widest">
+                      Arrest Records Archive
+                    </span>
+                  </div>
 
-                    <table className="w-full text-left text-xs font-mono">
-                      <thead className="bg-neutral-950/80 text-neutral-400 uppercase tracking-[0.15em] border-b border-neutral-800">
-                        <tr>
-                          <th className="px-5 py-3.5">Case / Suspect</th>
-                          <th className="px-5 py-3.5">Charges</th>
-                          <th className="px-5 py-3.5">Reporting Officer</th>
-                          <th className="px-5 py-3.5 text-right">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-neutral-800/60 text-neutral-300">
-                        {incidentReports.map((incident) => {
-                          const isSelected = selectedIncident?.id === incident.id;
-                          const canDelete = userIsHicom || incident.officer_name === userProfile?.username;
-                          return (
-                            <tr
-                              key={incident.id}
-                              onClick={() => setSelectedIncident(incident)}
-                              className={`transition-colors cursor-pointer ${
-                                isSelected ? 'bg-cyan-950/60 border-l-4 border-cyan-400' : 'hover:bg-cyan-950/20'
-                              }`}
+                  <table className="w-full text-left text-xs font-mono">
+                    <thead className="bg-neutral-950/80 text-neutral-400 uppercase tracking-[0.15em] border-b border-neutral-800">
+                      <tr>
+                        <th className="px-5 py-3.5">Username</th>
+                        <th className="px-5 py-3.5">Reason</th>
+                        <th className="px-5 py-3.5">Time (Seconds)</th>
+                        <th className="px-5 py-3.5">Timestamp</th>
+                        <th className="px-5 py-3.5 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-800/60 text-neutral-300">
+                      {arrestLogs.map((log) => (
+                        <tr key={log.id} className="hover:bg-cyan-950/20 transition-colors">
+                          <td className="px-5 py-3.5 text-cyan-400 font-bold">{log.username}</td>
+                          <td className="px-5 py-3.5">{log.reason}</td>
+                          <td className="px-5 py-3.5 text-yellow-400 font-semibold">{log.time_in_seconds}s</td>
+                          <td className="px-5 py-3.5 text-neutral-400 text-[10px]">
+                            {new Date(log.created_at).toLocaleString()}
+                          </td>
+                          <td className="px-5 py-3.5 text-right">
+                            <button
+                              onClick={() => handleRemoveArrestLog(log)}
+                              className="bg-red-950/60 hover:bg-red-900 border border-red-600/50 text-red-300 text-[10px] font-mono px-3.5 py-1 rounded-md transition-all uppercase tracking-wider font-semibold shadow-sm"
                             >
-                              <td className="px-5 py-3.5">
-                                <div className="font-bold text-neutral-100">{incident.title}</div>
-                                <div className="text-[10px] text-cyan-400">Suspect: {incident.suspect_name}</div>
-                              </td>
-                              <td className="px-5 py-3.5 text-yellow-400">{incident.charges}</td>
-                              <td className="px-5 py-3.5 text-neutral-400">{incident.officer_name}</td>
-                              <td className="px-5 py-3.5 text-right">
-                                {canDelete && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleRemoveIncident(incident);
-                                    }}
-                                    className="bg-red-950/60 hover:bg-red-900 border border-red-600/50 text-red-300 text-[10px] font-mono px-3.5 py-1 rounded-md transition-all uppercase tracking-wider font-semibold shadow-sm"
-                                  >
-                                    Delete
-                                  </button>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                        {incidentReports.length === 0 && (
-                          <tr>
-                            <td colSpan={4} className="text-center py-10 text-neutral-500 italic">
-                              No incident or arrest reports recorded in the database.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div className="bg-neutral-900/80 border border-neutral-800 rounded-xl p-5 font-mono space-y-4 backdrop-blur-xl self-start shadow-2xl">
-                    <h3 className="text-xs font-bold text-cyan-400 uppercase tracking-[0.2em] border-b border-neutral-800 pb-3">
-                      Incident Details Viewer
-                    </h3>
-                    {selectedIncident ? (
-                      <div className="space-y-4 text-xs">
-                        <div>
-                          <span className="text-[10px] text-neutral-500 uppercase tracking-widest block font-semibold">Case Title</span>
-                          <span className="font-bold text-white text-sm">{selectedIncident.title}</span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] text-neutral-500 uppercase tracking-widest block font-semibold">Suspect Subject</span>
-                          <span className="text-cyan-400 font-semibold">{selectedIncident.suspect_name}</span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] text-neutral-500 uppercase tracking-widest block font-semibold">Filed Charges</span>
-                          <span className="text-yellow-400 font-semibold">{selectedIncident.charges}</span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] text-neutral-500 uppercase tracking-widest block font-semibold">Reporting Officer</span>
-                          <span className="text-neutral-300">{selectedIncident.officer_name}</span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] text-neutral-500 uppercase tracking-widest block font-semibold">Timestamp</span>
-                          <span className="text-neutral-400">{new Date(selectedIncident.created_at || Date.now()).toLocaleString()}</span>
-                        </div>
-                        <div className="pt-3 border-t border-neutral-800">
-                          <span className="text-[10px] text-neutral-500 uppercase tracking-widest block mb-1 font-semibold">Narrative Description</span>
-                          <p className="bg-neutral-950 p-3 rounded-lg border border-neutral-800 text-neutral-300 whitespace-pre-wrap leading-relaxed">
-                            {selectedIncident.description}
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-neutral-500 italic py-10 text-center">
-                        Select an incident report from the list to review full case details and narrative.
-                      </p>
-                    )}
-                  </div>
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {arrestLogs.length === 0 && (
+                        <tr>
+                          <td colSpan="5" className="px-5 py-8 text-center text-neutral-500">
+                            No arrest logs recorded.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}
@@ -1080,41 +989,42 @@ export default function Dashboard() {
                       <span>SECURE DOCUMENTS & DIRECTIVES</span>
                     </h2>
                     <p className="text-xs font-mono text-neutral-400 mt-1">
-                      Classified intelligence briefs, standard operating procedures, and agency manuals
+                      Classified intelligence files and operational manuals
                     </p>
                   </div>
                   <div className="text-xs font-mono bg-cyan-950/60 border border-cyan-500/40 text-cyan-300 px-3.5 py-1.5 rounded-lg tracking-wider shadow-sm font-semibold">
-                    ACCESSIBLE: {visibleDocuments.length}
+                    ACCESSIBLE FILES: {visibleDocuments.length}
                   </div>
                 </div>
 
                 {userIsHicom && (
                   <form onSubmit={handleCreateDocument} className="bg-neutral-900/80 backdrop-blur-xl border border-cyan-900/50 p-6 rounded-xl space-y-4 shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
-                    <h3 className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-[0.2em] flex items-center space-x-2">
-                      <span>[+] UPLOAD / LINK NEW DOCUMENT</span>
+                    <h3 className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-[0.2em]">
+                      [+] PUBLISH NEW DOCUMENT LINK
                     </h3>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <div>
-                        <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1 font-semibold">Document Title</label>
+                        <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1.5 font-semibold">Document Title</label>
                         <input
                           type="text"
-                          placeholder="e.g. SOP - Raid Protocols v1"
+                          placeholder="e.g. Standard Operating Procedures"
                           value={docTitle}
                           onChange={(e) => setDocTitle(e.target.value)}
                           required
-                          className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan-400"
+                          className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan-400 shadow-inner"
                         />
                       </div>
+
                       <div>
-                        <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1 font-semibold">Secure URL / Link</label>
+                        <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1.5 font-semibold">External URL (Google Docs / Imgur)</label>
                         <input
                           type="url"
                           placeholder="https://docs.google.com/..."
                           value={docUrl}
                           onChange={(e) => setDocUrl(e.target.value)}
                           required
-                          className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan-400"
+                          className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan-400 shadow-inner"
                         />
                       </div>
                     </div>
@@ -1129,10 +1039,10 @@ export default function Dashboard() {
                               type="button"
                               key={code}
                               onClick={() => handleToggleRankPermission(code)}
-                              className={`text-[10px] font-mono px-3 py-1 rounded transition-all font-bold ${
+                              className={`px-3 py-1.5 rounded text-[10px] font-mono border transition-all ${
                                 isSelected 
-                                  ? 'bg-cyan-950 border border-cyan-400 text-cyan-200 shadow-sm' 
-                                  : 'bg-neutral-950 border border-neutral-800 text-neutral-500 hover:text-neutral-300'
+                                  ? 'bg-cyan-950 border-cyan-400 text-cyan-200 font-bold shadow-sm' 
+                                  : 'bg-neutral-950 border-neutral-800 text-neutral-500 hover:text-neutral-300'
                               }`}
                             >
                               {code}
@@ -1147,49 +1057,46 @@ export default function Dashboard() {
                       disabled={submittingDoc}
                       className="bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/60 text-cyan-200 text-xs font-mono px-6 py-3 rounded-lg transition-all uppercase tracking-widest font-bold shadow-[0_0_15px_rgba(6,182,212,0.3)]"
                     >
-                      {submittingDoc ? 'Publishing Directive...' : 'Publish Secure Document Link'}
+                      {submittingDoc ? 'Publishing...' : 'Publish Document Directive'}
                     </button>
                   </form>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {visibleDocuments.map((doc) => (
-                    <div key={doc.id} className="bg-neutral-900/60 border border-neutral-800 hover:border-cyan-500/50 p-5 rounded-xl space-y-3 backdrop-blur-xl flex flex-col justify-between transition-all shadow-xl">
+                    <div key={doc.id} className="bg-neutral-900/60 border border-neutral-800 p-5 rounded-xl space-y-4 backdrop-blur-xl shadow-xl flex flex-col justify-between">
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-mono bg-cyan-950 border border-cyan-500/40 text-cyan-300 px-2 py-0.5 rounded font-semibold">
-                            SECURE BRIEF
+                          <span className="text-[10px] font-mono text-cyan-400 bg-cyan-950/60 px-2.5 py-1 rounded border border-cyan-800/40">
+                            BY: {doc.created_by}
                           </span>
                           <span className="text-[10px] font-mono text-neutral-500">
-                            By: {doc.created_by || 'HICOM'}
+                            {new Date(doc.created_at).toLocaleDateString()}
                           </span>
                         </div>
-                        <h3 className="text-xs font-mono font-bold text-neutral-100 uppercase tracking-wide">
-                          {doc.title}
-                        </h3>
-                        <div className="text-[10px] font-mono text-neutral-400 flex flex-wrap gap-1 pt-1">
-                          <span className="text-neutral-500">Access:</span>
+                        <h3 className="text-sm font-mono font-bold text-neutral-100">{doc.title}</h3>
+                        <div className="flex flex-wrap gap-1 pt-1">
                           {doc.allowed_ranks?.map((r) => (
-                            <span key={r} className="bg-neutral-950 border border-neutral-800 text-yellow-400 px-1.5 py-0.5 rounded">
+                            <span key={r} className="text-[9px] font-mono bg-neutral-950 border border-neutral-800 text-neutral-400 px-2 py-0.5 rounded">
                               {r}
                             </span>
                           ))}
                         </div>
                       </div>
 
-                      <div className="pt-4 border-t border-neutral-800 flex items-center justify-between">
+                      <div className="flex items-center justify-between pt-4 border-t border-neutral-800/80">
                         <a
                           href={doc.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/60 text-cyan-200 text-[10px] font-mono px-4 py-2 rounded transition-all uppercase tracking-wider font-bold shadow-sm inline-block text-center"
+                          className="bg-cyan-950/60 hover:bg-cyan-900 border border-cyan-500/50 text-cyan-300 text-xs font-mono px-4 py-2 rounded transition-all uppercase tracking-wider font-semibold shadow-sm"
                         >
-                          Open Secure File →
+                          Open Document ↗
                         </a>
                         {userIsHicom && (
                           <button
                             onClick={() => handleRemoveDocument(doc)}
-                            className="bg-red-950/60 hover:bg-red-900 border border-red-600/50 text-red-300 text-[10px] font-mono px-3 py-2 rounded transition-all uppercase tracking-wider font-semibold"
+                            className="bg-red-950/40 hover:bg-red-900/80 border border-red-600/40 text-red-300 text-xs font-mono px-3 py-2 rounded transition-all uppercase tracking-wider"
                           >
                             Delete
                           </button>
@@ -1198,8 +1105,8 @@ export default function Dashboard() {
                     </div>
                   ))}
                   {visibleDocuments.length === 0 && (
-                    <div className="col-span-full text-center py-16 text-neutral-500 font-mono italic">
-                      No secure documents available for your current security clearance level.
+                    <div className="col-span-full py-12 text-center text-neutral-500 font-mono text-xs">
+                      No documents available for your clearance level.
                     </div>
                   )}
                 </div>
