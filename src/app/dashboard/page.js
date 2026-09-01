@@ -914,7 +914,7 @@ export default function Dashboard() {
                       <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1 font-semibold">Incident Title / Case Name</label>
                       <input
                         type="text"
-                        placeholder="e.g. Perimeter Breach at Sector 4"
+                        placeholder=""
                         value={incidentTitle}
                         onChange={(e) => setIncidentTitle(e.target.value)}
                         required
@@ -925,7 +925,7 @@ export default function Dashboard() {
                       <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1 font-semibold">Suspect / Offender Username</label>
                       <input
                         type="text"
-                        placeholder="e.g. SuspectRobloxName"
+                        placeholder="e.g. simeonko201"
                         value={suspectName}
                         onChange={(e) => setSuspectName(e.target.value)}
                         required
@@ -933,7 +933,7 @@ export default function Dashboard() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1 font-semibold">Arrest Charges / Infractions</label>
+                      <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1 font-semibold">Arrest Charges</label>
                       <input
                         type="text"
                         placeholder="e.g. Trespassing, Resisting Arrest"
